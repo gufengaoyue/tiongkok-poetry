@@ -18,7 +18,9 @@ ROOT = r"D:\Source\Repos\中国诗歌"
 DATA = os.path.join(ROOT, "server", "data")
 SCHEMA = os.path.join(ROOT, "cloudflare", "schema.sql")
 LINE_CHARS = "月风花酒雪云山江"
-BATCH = 100
+MAX_SQL_BYTES = 70_000
+AUTH_BATCH = 10
+BATCH = 10
 
 
 def sql_text(value):
@@ -28,6 +30,20 @@ def sql_text(value):
 def spaced(text):
     """把中文逐字加空格，供 FTS5 unicode61 phrase 查询。"""
     return " ".join(list(str(text).replace("\n", " ").replace("\x02", " ")))
+
+
+def sql_literal(value):
+    if isinstance(value, str):
+        return sql_text(value)
+    if isinstance(value, bool):
+        return "1" if value else "0"
+    if isinstance(value, (int, float)):
+        return repr(value)
+    return sql_text(value)
+
+
+def sql_tuple(values):
+    return "(" + ",".join(sql_literal(v) for v in values) + ")"
 
 
 def read_poems():
@@ -106,8 +122,8 @@ def main():
     # 诗人
     author_path = os.path.join(args.out, "010-authors.sql")
     with io.open(author_path, "w", encoding="utf-8", newline="\n") as f:
-        for i in range(0, len(authors), BATCH):
-            chunk = authors[i:i + BATCH]
+        for i in range(0, len(authors), AUTH_BATCH):
+            chunk = authors[i:i + AUTH_BATCH]
             vals = []
             for a in chunk:
                 vals.append("(" + ",".join([
@@ -136,26 +152,30 @@ def main():
 
     for index, path in enumerate(poem_files, 1):
         out_path = os.path.join(args.out, f"020-poems-{index:02d}.sql")
-        poem_vals, fts_vals = [], []
+        poem_sql, fts_sql = [], []
+        poem_rows, fts_rows = [], []
+        poem_bytes = fts_bytes = 0
         with io.open(path, "r", encoding="utf-8") as src, io.open(out_path, "w", encoding="utf-8", newline="\n") as out:
             def flush():
-                nonlocal poem_vals, fts_vals
-                if not poem_vals:
+                nonlocal poem_sql, fts_sql, poem_rows, fts_rows, poem_bytes, fts_bytes
+                if not poem_sql:
                     return
                 out.write("INSERT INTO poems (id,coll,dynasty,author,title,content,tags,rhythm,sub,notes,prologue,popularity,len,lines,anth,aid) VALUES\n"
-                          + ",\n".join(poem_vals) + ";\n")
+                          + ",\n".join(poem_sql) + ";\n")
                 out.write("INSERT INTO poems_fts (pid,title,author,body,tags,rhythm) VALUES\n"
-                          + ",\n".join(fts_vals) + ";\n")
+                          + ",\n".join(fts_sql) + ";\n")
                 if conn:
                     conn.executemany(
                         "INSERT INTO poems (id,coll,dynasty,author,title,content,tags,rhythm,sub,notes,prologue,popularity,len,lines,anth,aid) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                        [tuple(json.loads(v)) for v in poem_vals],
+                        poem_rows,
                     )
                     conn.executemany(
                         "INSERT INTO poems_fts (pid,title,author,body,tags,rhythm) VALUES (?,?,?,?,?,?)",
-                        [tuple(json.loads(v)) for v in fts_vals],
+                        fts_rows,
                     )
-                poem_vals, fts_vals = [], []
+                poem_sql, fts_sql = [], []
+                poem_rows, fts_rows = [], []
+                poem_bytes = fts_bytes = 0
 
             for line in src:
                 line = line.rstrip("\n")
@@ -167,13 +187,22 @@ def main():
                 key = f"{row['author']}|{row['dynasty']}"
                 a = lookup[key]
                 row["aid"] = a["id"]
-                rid_fields = [row["id"], row["coll"], row["dynasty"], row["author"], row["title"],
+                rid_values = (row["id"], row["coll"], row["dynasty"], row["author"], row["title"],
                               row["content"], row["tags"], row["rhythm"], row["sub"], row["notes"],
-                              row["prologue"], row["popularity"], row["len"], row["lines"], row["anth"], row["aid"]]
-                poem_vals.append(json.dumps(rid_fields, ensure_ascii=False))
-                fts_vals.append(json.dumps([row["id"], spaced(row["title"]), spaced(row["author"]),
-                                           spaced(row["content"]), spaced(row["tags"]), spaced(row["rhythm"])],
-                                          ensure_ascii=False))
+                              row["prologue"], row["popularity"], row["len"], row["lines"], row["anth"], row["aid"])
+                fts_values = (row["id"], spaced(row["title"]), spaced(row["author"]),
+                              spaced(row["content"]), spaced(row["tags"]), spaced(row["rhythm"]))
+                rid_sql = sql_tuple(rid_values)
+                fts_sql_value = sql_tuple(fts_values)
+                if poem_sql and (poem_bytes + len(rid_sql.encode("utf-8")) > MAX_SQL_BYTES
+                                 or fts_bytes + len(fts_sql_value.encode("utf-8")) > MAX_SQL_BYTES):
+                    flush()
+                poem_sql.append(rid_sql)
+                fts_sql.append(fts_sql_value)
+                poem_rows.append(rid_values)
+                fts_rows.append(fts_values)
+                poem_bytes += len(rid_sql.encode("utf-8")) + 2
+                fts_bytes += len(fts_sql_value.encode("utf-8")) + 2
 
                 for ch in LINE_CHARS:
                     if ch not in row["content"]:
@@ -185,7 +214,7 @@ def main():
                             "author": row["author"], "dynasty": row["dynasty"], "coll": row["coll"],
                             "anth": row["anth"], "pop": row["popularity"],
                         }
-                if len(poem_vals) >= BATCH:
+                if len(poem_sql) >= 1 and poem_bytes > MAX_SQL_BYTES:
                     flush()
             flush()
             print(f"  {os.path.basename(out_path)}  {os.path.getsize(out_path)/1024/1024:.1f} MiB")

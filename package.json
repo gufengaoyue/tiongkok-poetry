@@ -9,6 +9,7 @@
     "data": "python tools/build_corpus.py && python tools/post_stats.py && python tools/patch_stats.py && python tools/split_poems.py --replace",
     "cf:build": "node tools/prepare_cloudflare.js && npm run build",
     "cf:seed": "python tools/build_cloudflare_seed.py",
+    "cf:chunks": "python tools/split_d1_sql.py --max-mb 8",
     "cf:test": "node tools/test_cloudflare_worker.mjs",
     "cf:dev": "npm run cf:build && wrangler dev -c cloudflare/wrangler.toml",
     "cf:deploy": "npm run cf:build && wrangler deploy -c cloudflare/wrangler.toml"
