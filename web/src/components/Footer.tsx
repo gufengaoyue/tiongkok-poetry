@@ -22,7 +22,7 @@ export function Footer() {
           <div className="foot-col">
             <h4>数据</h4>
             <p>12 部总集 · 345,386 首</p>
-            <p>13,733 位诗人 · 21,834,513 字</p>
+            <p>13,733 位诗人 · 21,834,450 字</p>
             <p>原始数据来源：chinese-poetry</p>
             <p>许可协议：MIT</p>
           </div>
