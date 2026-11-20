@@ -13,9 +13,29 @@ __pycache__/
 
 # Cloudflare 本地种子与验证库（体积大，按需生成）
 cloudflare/seed/
+cloudflare/token-index/
 cloudflare/*.sqlite
 cloudflare/*.sqlite-*
+server/data/token-index.sqlite
+server/data/token-index.sqlite-*
 .wrangler/
+
+# 生成的大体积静态数据（按需重建，不入主仓库）
+web/public/data/poem-index.json
+web/public/data/poem-index-*.json
+web/public/data/poems/
+web/public/data/poet-index.json
+web/public/data/poet-bio/
+web/public/data/daily.json
+web/public/data/random.json
+web/public/data/lines/
+web/public/data/manifest.json
+web/public/data/id-order.json
+web/public/data/token-index.bin
+web/public/data/token-offsets.json
+web/dist-pages/
+web/dist/data/
+web/dist/assets/
 
 # font source files (regenerate with tools/build_fonts.py)
 tools/fonts/*.ttf

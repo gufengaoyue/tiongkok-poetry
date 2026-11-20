@@ -9,8 +9,9 @@ directory = "../web/dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 
-# D1 数据库：先执行 `wrangler d1 create molan-poetry`，把返回的 database_id 填到下面。
+# 免费方案：正文全部是静态资源；D1 只存单字/高频二元组检索索引。
+# 先执行 `wrangler d1 create molan-search`，把返回的 database_id 填到下面。
 [[d1_databases]]
 binding = "DB"
-database_name = "molan-poetry"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_name = "molan-search"
+database_id = "6b3f3d09-1f41-4db4-8637-d0a9f54fca97"

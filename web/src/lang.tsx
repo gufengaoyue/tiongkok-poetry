@@ -51,7 +51,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (lang !== 't' || map) return;
     setLoading(true);
-    fetch('/api/s2t').then(r => r.json()).then(d => { setMap(d); setLoading(false); }).catch(() => setLoading(false));
+    fetch(`${import.meta.env.BASE_URL.replace(/\/$/, '')}/data/s2t.json`).then(r => r.json()).then(d => { setMap(d); setLoading(false); }).catch(() => setLoading(false));
   }, [lang, map]);
 
   const tr = useCallback((s: string) => (lang === 't' ? convert(s, map) : s), [lang, map]);

@@ -18,7 +18,7 @@ export function PoemCard({ poem, delay = 0 }: { poem: PoemBrief; delay?: number 
       </div>
       <div className="pc-title">{tr(poem.title)}</div>
       <div className="pc-author">{tr(poem.author)}</div>
-      <div className="pc-lead">{tr(poem.lead)}</div>
+      <div className="pc-lead">{poem.lead ? tr(poem.lead) : (poem.rhythm ? tr(poem.rhythm) : tr(poem.collName))}</div>
       <div className="pc-foot">
         <span>{poem.len} 字</span>
         {poem.rhythm && <span className="tag">· {tr(poem.rhythm)}</span>}

@@ -23,6 +23,19 @@ const statsRaw = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'stats.json'), '
 const authorsRaw = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'authors.json'), 'utf8'));
 const classicsRaw = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'classics.json'), 'utf8'));
 
+/* 本地全文检索索引：与线上 D1 同一张 token_index 表 */
+let tokenDb = null;
+try {
+  const { DatabaseSync } = require('node:sqlite');
+  const dbPath = path.join(DATA_DIR, 'token-index.sqlite');
+  if (fs.existsSync(dbPath)) {
+    tokenDb = new DatabaseSync(dbPath, { readOnly: true });
+    log('全文检索索引已载入 token-index.sqlite');
+  }
+} catch (err) {
+  log('全文检索索引未载入：', err.message);
+}
+
 const shardFiles = fs.readdirSync(DATA_DIR).filter(f => /^poems-\d{2}\.tsv$/.test(f)).sort();
 const lines = [];
 if (shardFiles.length) {
@@ -171,6 +184,85 @@ function hashStr(s) {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
   return h >>> 0;
+}
+
+/* ------------------------------------------------------------------ 检索索引 */
+
+function cjkQuery(q) {
+  return [...String(q || '').normalize('NFC')].filter(ch => /\p{Script=Han}/u.test(ch));
+}
+
+function decodeIds(buf) {
+  const bytes = Buffer.from(buf || []);
+  const out = [];
+  let value = 0;
+  let shift = 0;
+  let id = 0;
+  let first = true;
+  for (const byte of bytes) {
+    value += (byte & 0x7f) << shift;
+    if (byte & 0x80) { shift += 7; continue; }
+    if (first) { id = value; first = false; }
+    else id += value;
+    out.push(id);
+    value = 0;
+    shift = 0;
+  }
+  return out;
+}
+
+function intersectIds(a, b) {
+  const out = [];
+  let i = 0, j = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) { out.push(a[i]); i++; j++; }
+    else if (a[i] < b[j]) i++;
+    else j++;
+  }
+  return out;
+}
+
+function queryTokens(tokens) {
+  if (!tokenDb || !tokens.length) return new Map();
+  const rows = tokenDb.prepare(
+    `SELECT token, seq, ids FROM token_index WHERE token IN (${tokens.map(() => '?').join(',')}) ORDER BY token, seq`
+  ).all(...tokens);
+  const out = new Map();
+  for (const row of rows) {
+    let arr = out.get(row.token);
+    if (!arr) { arr = []; out.set(row.token, arr); }
+    arr.push(...decodeIds(row.ids));
+  }
+  return out;
+}
+
+function searchCandidates(q) {
+  const chars = cjkQuery(q);
+  if (!chars.length) return { mode: 'none', tokens: [], ids: [], total: 0 };
+  let tokens, mode;
+  if (chars.length === 1) {
+    tokens = ['c:' + chars[0]];
+    mode = 'char';
+  } else {
+    tokens = [];
+    for (let i = 0; i + 1 < chars.length; i++) tokens.push('b:' + chars[i] + chars[i + 1]);
+    mode = 'bigram';
+  }
+  let map = queryTokens(tokens);
+  const missing = tokens.some(t => !map.has(t));
+  if (mode === 'bigram' && missing) {
+    // 罕见词组没有二元索引时退回单字交集。
+    tokens = chars.map(ch => 'c:' + ch);
+    mode = 'char';
+    map = queryTokens(tokens);
+  }
+  const lists = tokens.map(t => map.get(t) || []);
+  if (lists.some(list => !list.length)) {
+    return { mode, tokens, ids: [], total: 0 };
+  }
+  let ids = lists[0];
+  for (let i = 1; i < lists.length; i++) ids = intersectIds(ids, lists[i]);
+  return { mode, tokens, ids, total: ids.length };
 }
 
 /* ------------------------------------------------------------------ 查询 */
@@ -414,6 +506,13 @@ const server = http.createServer((req, res) => {
   try {
     if (p.startsWith('/api/')) {
       const route = p.slice(4);
+      if (route === '/search-candidates') {
+        const q = (qp.q || '').trim();
+        if (!q) return sendJson(res, { mode: 'none', tokens: [], ids: [], total: 0 });
+        if (!tokenDb) return sendJson(res, { error: 'no_index' }, 503);
+        const r = searchCandidates(q);
+        return sendJson(res, r, 200, 'public, max-age=3600');
+      }
       if (route === '/stats' || route === '/meta') {
         return sendJson(res, { ...statsRaw, generatedAt: new Date().toISOString() }, 200, 'public, max-age=60');
       }

@@ -177,7 +177,7 @@ export function PoemPage() {
                     <Link key={x.id} to={`/poem/${x.id}`} className="poem-card" style={{ minHeight: 150 }}>
                       <div className="pc-head"><span className="pc-dyn">{x.dynasty}</span><span className="pc-coll">{x.len} 字</span></div>
                       <div className="pc-title" style={{ fontSize: 18 }}>{tr(x.title)}</div>
-                      <div className="pc-lead" style={{ marginTop: 8, WebkitLineClamp: 2 }}>{tr(x.lead)}</div>
+                      <div className="pc-lead" style={{ marginTop: 8, WebkitLineClamp: 2 }}>{x.lead ? tr(x.lead) : (x.rhythm ? tr(x.rhythm) : '—')}</div>
                     </Link>
                   ))}
                 </div>
@@ -194,7 +194,7 @@ export function PoemPage() {
                     <Link key={x.id} to={`/poem/${x.id}`} className="poem-card" style={{ minHeight: 140 }}>
                       <div className="pc-title" style={{ fontSize: 17 }}>{tr(x.title)}</div>
                       <div className="pc-author">{tr(x.author)}</div>
-                      <div className="pc-lead" style={{ marginTop: 6 }}>{tr(x.lead)}</div>
+                      <div className="pc-lead" style={{ marginTop: 6 }}>{x.lead ? tr(x.lead) : (x.rhythm ? tr(x.rhythm) : '—')}</div>
                     </Link>
                   ))}
                 </div>
