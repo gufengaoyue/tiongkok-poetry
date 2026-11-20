@@ -1,0 +1,16 @@
+name = "molan-verse-archive"
+main = "worker.js"
+compatibility_date = "2025-11-01"
+
+# 前端构建产物由 Workers Static Assets 托管。
+# directory 相对本配置文件所在目录解析。
+[assets]
+directory = "../web/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# D1 数据库：先执行 `wrangler d1 create molan-poetry`，把返回的 database_id 填到下面。
+[[d1_databases]]
+binding = "DB"
+database_name = "molan-poetry"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"

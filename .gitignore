@@ -1,0 +1,26 @@
+# dependencies
+web/node_modules/
+node_modules/
+
+# build caches
+web/.vite/
+web/*.tsbuildinfo
+__pycache__/
+*.pyc
+
+# runtime logs
+*.log
+
+# Cloudflare 本地种子与验证库（体积大，按需生成）
+cloudflare/seed/
+cloudflare/*.sqlite
+cloudflare/*.sqlite-*
+.wrangler/
+
+# font source files (regenerate with tools/build_fonts.py)
+tools/fonts/*.ttf
+
+# ad-hoc probes
+_probe*.py
+_charcheck*.js
+_dupcheck.py
