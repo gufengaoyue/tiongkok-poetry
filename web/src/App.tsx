@@ -13,6 +13,7 @@ import { Atlas } from './pages/Atlas';
 import { SearchPage } from './pages/SearchPage';
 import { Classics, ClassicPage } from './pages/Classics';
 import { About } from './pages/About';
+import { Favorites } from './pages/Favorites';
 
 function ScrollTop() {
   const { pathname } = useLocation();
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/classics" element={<Classics />} />
         <Route path="/classics/:id" element={<ClassicPage />} />
+        <Route path="/favorites" element={<Favorites />} />
         <Route path="/about" element={<About />} />
         <Route path="*" element={
           <main className="page"><div className="shell" style={{ paddingTop: 140, textAlign: 'center' }}>

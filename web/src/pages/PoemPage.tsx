@@ -3,12 +3,9 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../api';
 import { useApi } from '../hooks';
 import { useLang } from '../lang';
+import { loadFavs, saveFavs } from '../favorites';
 import type { PoemDetail } from '../types';
 import { Icon } from '../components/Icon';
-
-function loadFavs(): string[] {
-  try { return JSON.parse(localStorage.getItem('molan-fav') || '[]'); } catch { return []; }
-}
 
 export function PoemPage() {
   const { id } = useParams();
@@ -30,7 +27,7 @@ export function PoemPage() {
   const toggleFav = () => {
     const favs = loadFavs();
     const next = favs.includes(id!) ? favs.filter(x => x !== id) : [...favs, id!];
-    localStorage.setItem('molan-fav', JSON.stringify(next));
+    saveFavs(next);
     setFav(next.includes(id!));
   };
 
@@ -98,9 +95,10 @@ export function PoemPage() {
                 </button>
               )}
               <button className={`tool ${fav ? 'on' : ''}`} onClick={toggleFav}>{Icon.heart({})} {fav ? '已收藏' : '收藏'}</button>
+              {fav && <Link className="tool" to="/favorites">查看收藏 →</Link>}
               <button className="tool" onClick={copy}>{Icon.copy({})} {copied ? '已复制' : '复制'}</button>
               <button className="tool" onClick={async () => {
-                const r = await api<{ id: string }>('/poem/random');
+                const r = await api<{ id: string }>('/poem/random', { t: Date.now() });
                 navigate(`/poem/${r.id}`);
               }}>{Icon.shuffle({})} 随机</button>
             </div>

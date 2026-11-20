@@ -10,6 +10,7 @@ const links = [
   { to: '/poets', label: '诗人', en: 'POETS' },
   { to: '/atlas', label: '图谱', en: 'ATLAS' },
   { to: '/classics', label: '典籍', en: 'CLASSICS' },
+  { to: '/favorites', label: '收藏', en: 'FAVORITES' },
 ];
 
 export function Nav({ onSearch }: { onSearch: () => void }) {

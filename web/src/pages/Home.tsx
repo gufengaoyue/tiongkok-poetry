@@ -122,7 +122,7 @@ export function Home() {
   const maxAuthor = Math.max(...(topAuthors.map(a => a.poemCount) || [1]), 1);
 
   const random = async () => {
-    const r = await api<{ id: string }>('/poem/random');
+    const r = await api<{ id: string }>('/poem/random', { t: Date.now() });
     navigate(`/poem/${r.id}`);
   };
 
