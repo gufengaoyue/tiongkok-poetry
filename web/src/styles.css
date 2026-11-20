@@ -590,11 +590,11 @@ mark { background: none; color: var(--gold-2); }
 .char-chips span { font-family: var(--serif); font-size: 20px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--text-2); }
 
 /* ---------------- atlas ---------------- */
-.atlas-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+.atlas-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 18px; }
 .panel {
   border: 1px solid var(--line); border-radius: var(--radius); padding: 30px;
   background: linear-gradient(165deg, rgba(255,255,255,.035), rgba(255,255,255,.008));
-  position: relative; overflow: hidden;
+  position: relative; overflow: hidden; min-width: 0;
 }
 .panel.wide { grid-column: span 12; }
 .panel.half { grid-column: span 6; }
@@ -602,6 +602,11 @@ mark { background: none; color: var(--gold-2); }
 .panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 26px; }
 .panel-title { font-family: var(--serif); font-size: 22px; letter-spacing: .06em; }
 .panel-label { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; color: var(--text-3); text-transform: uppercase; }
+
+.dyn-scroll { overflow-x: auto; scrollbar-width: thin; width: 100%; max-width: 100%; }
+.dyn-band { display: flex; height: 58px; border-radius: 6px; overflow: hidden; border: 1px solid var(--line); }
+.dyn-band > div { flex: 1 1 auto; min-width: 0; }
+.dyn-legend { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-top: 24px; }
 
 .bar-list { display: flex; flex-direction: column; gap: 14px; }
 .bar-row { display: grid; grid-template-columns: 70px 1fr 76px; gap: 14px; align-items: center; }
@@ -763,6 +768,10 @@ mark { background: none; color: var(--gold-2); }
   .stat-item:nth-child(4) { border-top: 1px solid var(--line); }
   .coll-grid, .lib-grid, .books { grid-template-columns: 1fr 1fr; }
   .atlas-grid .panel.half, .atlas-grid .panel.third { grid-column: span 12; }
+  .panel-head { flex-wrap: wrap; gap: 6px 16px; }
+  .dyn-band { min-width: 560px; }
+  .dyn-band > div { min-width: 72px; }
+  .dyn-legend { grid-template-columns: repeat(3, 1fr); }
   .poet-row { grid-template-columns: 46px 1fr 90px; }
   .poet-brief, .poet-bar { display: none; }
   .poet-hero-grid { grid-template-columns: 1fr; }
@@ -791,4 +800,7 @@ mark { background: none; color: var(--gold-2); }
   .lib-toolbar { flex-direction: column; align-items: stretch; }
   .foot-top { grid-template-columns: 1fr; }
   .sec-head { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .panel { padding: 20px; }
+  .panel-label { font-size: 10px; letter-spacing: .1em; }
+  .dyn-legend { grid-template-columns: repeat(2, 1fr); }
 }

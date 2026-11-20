@@ -18,19 +18,21 @@ function DynastyBands({ stats }: { stats: Stats }) {
   const sum = logs.reduce((s, d) => s + d.v, 0);
   return (
     <div>
-      <div style={{ display: 'flex', height: 58, borderRadius: 6, overflow: 'hidden', border: '1px solid var(--line)' }}>
-        {logs.map(d => (
-          <div key={d.name} title={`${d.name} ${d.count}`}
-            style={{ width: `${(d.v / sum) * 100}%`, background: `linear-gradient(180deg, ${DYN_COLOR[d.name]}44, ${DYN_COLOR[d.name]}18)`,
-              borderRight: '1px solid rgba(0,0,0,.35)', position: 'relative' }}>
-            <span style={{ position: 'absolute', left: 9, top: 7, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.06em', color: DYN_COLOR[d.name] }}>{d.name}</span>
-            <span style={{ position: 'absolute', left: 9, bottom: 7, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text-3)' }}>
-              {(d.count / total * 100).toFixed(1)}%
-            </span>
-          </div>
-        ))}
+      <div className="dyn-scroll">
+        <div className="dyn-band">
+          {logs.map(d => (
+            <div key={d.name} title={`${d.name} ${d.count}`}
+              style={{ width: `${(d.v / sum) * 100}%`, background: `linear-gradient(180deg, ${DYN_COLOR[d.name]}44, ${DYN_COLOR[d.name]}18)`,
+                borderRight: '1px solid rgba(0,0,0,.35)', position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 9, top: 7, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.06em', color: DYN_COLOR[d.name] }}>{d.name}</span>
+              <span style={{ position: 'absolute', left: 9, bottom: 7, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text-3)' }}>
+                {(d.count / total * 100).toFixed(1)}%
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 12, marginTop: 24 }}>
+      <div className="dyn-legend">
         {stats.dynasties.map(d => (
           <div key={d.name}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
