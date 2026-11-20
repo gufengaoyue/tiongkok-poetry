@@ -6,11 +6,7 @@ import { useLang } from '../lang';
 import type { Stats, PoetBrief } from '../types';
 import { BarList, CharCloud, RadialChart } from '../components/visuals';
 import { SectionHead } from '../components/ui';
-
-const DYN_COLOR: Record<string, string> = {
-  先秦: '#b9a78a', 汉: '#c08a63', 唐: '#d8b36a', 五代: '#b39ac4',
-  宋: '#74c8b6', 元: '#94a6c9', 清: '#cf8f8f',
-};
+import { DYN_COLOR } from '../palette';
 
 function DynastyBands({ stats }: { stats: Stats }) {
   const total = stats.totals.poems;
@@ -23,7 +19,7 @@ function DynastyBands({ stats }: { stats: Stats }) {
           {logs.map(d => (
             <div key={d.name} title={`${d.name} ${d.count}`}
               style={{ width: `${(d.v / sum) * 100}%`, background: `linear-gradient(180deg, ${DYN_COLOR[d.name]}44, ${DYN_COLOR[d.name]}18)`,
-                borderRight: '1px solid rgba(0,0,0,.35)', position: 'relative' }}>
+                borderRight: '1px solid var(--line-strong)', position: 'relative' }}>
               <span style={{ position: 'absolute', left: 9, top: 7, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.06em', color: DYN_COLOR[d.name] }}>{d.name}</span>
               <span style={{ position: 'absolute', left: 9, bottom: 7, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text-3)' }}>
                 {(d.count / total * 100).toFixed(1)}%
@@ -58,14 +54,14 @@ function ImageryRadar({ data, size = 520 }: { data: { name: string; count: numbe
     <svg viewBox={`0 0 ${size} ${size}`} style={{ width: '100%', maxWidth: size }}>
       <defs>
         <radialGradient id="ir" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="rgba(116,200,182,.10)" />
-          <stop offset="70%" stopColor="rgba(216,179,106,.05)" />
-          <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+          <stop offset="0%" stopColor="var(--jade)" stopOpacity=".12" />
+          <stop offset="70%" stopColor="var(--gold)" stopOpacity=".06" />
+          <stop offset="100%" stopColor="var(--gold)" stopOpacity="0" />
         </radialGradient>
       </defs>
       <circle cx={cx} cy={cy} r={rMax + 40} fill="url(#ir)" />
       {Array.from({ length: 4 }).map((_, i) => (
-        <circle key={i} cx={cx} cy={cy} r={rMax * (0.35 + i * 0.22)} fill="none" stroke="rgba(232,222,200,.05)" />
+        <circle key={i} cx={cx} cy={cy} r={rMax * (0.35 + i * 0.22)} fill="none" stroke="var(--line)" />
       ))}
       {items.map((it, i) => {
         const a = i * step - Math.PI / 2;
@@ -74,16 +70,16 @@ function ImageryRadar({ data, size = 520 }: { data: { name: string; count: numbe
         const lx = cx + Math.cos(a) * (r + 20), ly = cy + Math.sin(a) * (r + 20);
         return (
           <g key={it.name}>
-            <line x1={cx} y1={cy} x2={x} y2={y} stroke="rgba(216,179,106,.12)" strokeWidth="1" />
-            <circle cx={x} cy={y} r={3 + (it.count / max) * 7} fill={`rgba(216,179,106,${0.25 + (it.count / max) * 0.55})`} />
+            <line x1={cx} y1={cy} x2={x} y2={y} stroke="var(--line-strong)" strokeWidth="1" />
+            <circle cx={x} cy={y} r={3 + (it.count / max) * 7} fill="var(--gold)" opacity={0.25 + (it.count / max) * 0.55} />
             <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
-              fontSize={11 + (it.count / max) * 8} fontFamily="Molan Serif, serif" fill="#c9c2b2" opacity={0.5 + (it.count / max) * 0.5}>
+              fontSize={11 + (it.count / max) * 8} fontFamily="Molan Serif, serif" fill="var(--text-2)" opacity={0.5 + (it.count / max) * 0.5}>
               {it.name}
             </text>
           </g>
         );
       })}
-      <circle cx={cx} cy={cy} r={3} fill="#d8b36a" />
+      <circle cx={cx} cy={cy} r={3} fill="var(--gold)" />
     </svg>
   );
 }
@@ -125,9 +121,9 @@ function PoetScatter({ poets, dynasties }: { poets: PoetBrief[]; dynasties: Stat
       <svg viewBox={`0 0 ${W} ${H}`} className="scatter" style={{ width: '100%' }}>
         <defs>
           <linearGradient id="poetCurve" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#d8b36a" stopOpacity=".45" />
-            <stop offset="55%" stopColor="#74c8b6" stopOpacity=".22" />
-            <stop offset="100%" stopColor="#74c8b6" stopOpacity=".05" />
+            <stop offset="0%" stopColor="var(--gold)" stopOpacity=".45" />
+            <stop offset="55%" stopColor="var(--jade)" stopOpacity=".22" />
+            <stop offset="100%" stopColor="var(--jade)" stopOpacity=".05" />
           </linearGradient>
         </defs>
 
@@ -135,22 +131,22 @@ function PoetScatter({ poets, dynasties }: { poets: PoetBrief[]; dynasties: Stat
           const y = yOf(v);
           return (
             <g key={v}>
-              <line x1={PL} y1={y} x2={W - PR} y2={y} stroke="rgba(232,222,200,.055)" strokeDasharray="2 7" />
+              <line x1={PL} y1={y} x2={W - PR} y2={y} stroke="var(--line)" strokeDasharray="2 7" />
               <text x={PL - 12} y={y} textAnchor="end" dominantBaseline="middle" fontSize="10.5"
-                fontFamily="IBM Plex Mono" fill="#726e64">{v >= 1000 ? `${v / 1000}k` : v}</text>
+                fontFamily="IBM Plex Mono" fill="var(--text-3)">{v >= 1000 ? `${v / 1000}k` : v}</text>
             </g>
           );
         })}
 
         {[0, 60, 120, 180, 239].filter(i => i < data.length).map(i => (
           <g key={i}>
-            <line x1={xOf(i)} y1={PT} x2={xOf(i)} y2={H - PB} stroke="rgba(232,222,200,.035)" />
+            <line x1={xOf(i)} y1={PT} x2={xOf(i)} y2={H - PB} stroke="var(--line)" strokeOpacity=".55" />
             <text x={xOf(i)} y={H - PB + 22} textAnchor="middle" fontSize="10.5"
-              fontFamily="IBM Plex Mono" fill="#726e64">{i + 1}</text>
+              fontFamily="IBM Plex Mono" fill="var(--text-3)">{i + 1}</text>
           </g>
         ))}
         <text x={W - PR} y={H - 18} textAnchor="end" fontSize="10.5"
-          fontFamily="IBM Plex Mono" fill="#5f5b52" letterSpacing="1.5">存诗量排名 · RANK BY VOLUME</text>
+          fontFamily="IBM Plex Mono" fill="var(--text-3)" letterSpacing="1.5">存诗量排名 · RANK BY VOLUME</text>
 
         {data.length > 1 && (
           <path d={line} fill="none" stroke="url(#poetCurve)" strokeWidth="1.3" />
@@ -161,7 +157,7 @@ function PoetScatter({ poets, dynasties }: { poets: PoetBrief[]; dynasties: Stat
           return (
             <circle key={p.id} cx={xOf(i)} cy={yOf(p.poemCount)} r={rOf(p.poemCount)}
               fill={c} fillOpacity={0.16 + Math.min(0.6, p.poemCount / 6000)}
-              stroke="rgba(5,6,10,.5)" strokeWidth=".6"
+              stroke="var(--line-strong)" strokeWidth=".6"
               onMouseEnter={e => setTip({ x: e.clientX, y: e.clientY, p })}
               onMouseMove={e => setTip({ x: e.clientX, y: e.clientY, p })}
               onMouseLeave={() => setTip(null)}
@@ -173,10 +169,10 @@ function PoetScatter({ poets, dynasties }: { poets: PoetBrief[]; dynasties: Stat
         {top && (
           <g pointerEvents="none">
             <circle cx={xOf(0)} cy={yOf(top.poemCount)} r={rOf(top.poemCount) + 8}
-              fill="none" stroke="rgba(216,179,106,.28)" strokeDasharray="2 5" />
+              fill="none" stroke="var(--gold)" strokeOpacity=".45" strokeDasharray="2 5" />
             <line x1={xOf(0)} y1={yOf(top.poemCount) - 8} x2={xOf(0) + 14} y2={PT - 4}
-              stroke="rgba(216,179,106,.3)" strokeWidth=".8" />
-            <text x={xOf(0) + 18} y={PT + 1} fontSize="11" fontFamily="Molan Serif, serif" fill="#d8b36a">
+              stroke="var(--gold)" strokeOpacity=".55" strokeWidth=".8" />
+            <text x={xOf(0) + 18} y={PT + 1} fontSize="11" fontFamily="Molan Serif, serif" fill="var(--gold-2)">
               {tr(top.name)} · {top.poemCount.toLocaleString('en-US')} 首
             </text>
           </g>
@@ -185,7 +181,7 @@ function PoetScatter({ poets, dynasties }: { poets: PoetBrief[]; dynasties: Stat
         {dynasties.map((d, i) => (
           <g key={d.name} transform={`translate(${W - PR - 268 + i * 38}, 16)`}>
             <circle cx="0" cy="0" r="2.6" fill={DYN_COLOR[d.name]} />
-            <text x="7" y="3.4" fontSize="10.5" fontFamily="Molan Serif, serif" fill="#8a857a">{d.name}</text>
+            <text x="7" y="3.4" fontSize="10.5" fontFamily="Molan Serif, serif" fill="var(--text-3)">{d.name}</text>
           </g>
         ))}
       </svg>

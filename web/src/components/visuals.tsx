@@ -9,6 +9,14 @@ export function HeroCanvas() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     let w = 0, h = 0, raf = 0, t = 0;
+    let starColor = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() || '#d8b36a';
+    let starAlpha = document.documentElement.dataset.theme === 'paper' ? 0.72 : 1;
+    const readTheme = () => {
+      starColor = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() || '#d8b36a';
+      starAlpha = document.documentElement.dataset.theme === 'paper' ? 0.72 : 1;
+    };
+    const themeObserver = new MutationObserver(readTheme);
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const mouse = { x: -999, y: -999 };
     const parts = Array.from({ length: 130 }, () => ({
@@ -47,7 +55,8 @@ export function HeroCanvas() {
         const push = d < 130 ? (130 - d) / 130 : 0;
         ctx.beginPath();
         ctx.arc(x + (d ? dx / d * push * 16 : 0), y + (d ? dy / d * push * 16 : 0), p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(226, 193, 130, ${p.a * (1 - push * 0.45)})`;
+        ctx.fillStyle = starColor;
+        ctx.globalAlpha = p.a * (1 - push * 0.45) * starAlpha;
         ctx.fill();
       }
       raf = requestAnimationFrame(draw);
@@ -55,6 +64,7 @@ export function HeroCanvas() {
     draw();
     return () => {
       cancelAnimationFrame(raf);
+      themeObserver.disconnect();
       window.removeEventListener('resize', resize);
       window.removeEventListener('mousemove', onMove);
     };
@@ -94,24 +104,24 @@ export function RadialChart({ data, total, size = 520 }: { data: { name: string;
       <svg className="radial-svg" viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
         <defs>
           <radialGradient id="rg" cx="50%" cy="50%" r="62%">
-            <stop offset="0%" stopColor="rgba(216,179,106,.18)" />
-            <stop offset="100%" stopColor="rgba(216,179,106,0)" />
+            <stop offset="0%" stopColor="var(--gold)" stopOpacity=".18" />
+            <stop offset="100%" stopColor="var(--gold)" stopOpacity="0" />
           </radialGradient>
           <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#f0d9a8" />
-            <stop offset="100%" stopColor="rgba(216,179,106,.28)" />
+            <stop offset="0%" stopColor="var(--gold-2)" />
+            <stop offset="100%" stopColor="var(--gold)" stopOpacity=".28" />
           </linearGradient>
         </defs>
         <circle cx={cx} cy={cy} r={size * 0.39} fill="url(#rg)" />
         {[0.415, 0.445, 0.475].map((k, i) => (
           <circle key={i} cx={cx} cy={cy} r={size * k} fill="none"
-            stroke="rgba(232,222,200,.06)" strokeDasharray={i === 1 ? '2 8' : undefined} />
+            stroke="var(--line)" strokeDasharray={i === 1 ? '2 8' : undefined} />
         ))}
         {Array.from({ length: 72 }).map((_, i) => {
           const a = (i / 72) * Math.PI * 2;
           return <line key={i} x1={cx + Math.cos(a) * size * 0.455} y1={cy + Math.sin(a) * size * 0.455}
             x2={cx + Math.cos(a) * size * 0.478} y2={cy + Math.sin(a) * size * 0.478}
-            stroke="rgba(216,179,106,.16)" strokeWidth="1" />;
+            stroke="var(--gold)" strokeOpacity=".18" strokeWidth="1" />;
         })}
         {items.map((d, i) => {
           const a = i * step - Math.PI / 2 + step * 0.12;
@@ -125,8 +135,8 @@ export function RadialChart({ data, total, size = 520 }: { data: { name: string;
             <g key={d.name} className="radial-item">
               <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="url(#bar)" strokeWidth={9}
                 strokeLinecap="round" opacity={0.35 + (d.count / max) * 0.55} />
-              <circle cx={x2} cy={y2} r={2.6} fill="#f0d9a8" opacity={0.75} />
-              <text x={lx} y={ly} fill="#8d887c" fontSize="10.5" fontFamily="Molan Serif, serif"
+              <circle cx={x2} cy={y2} r={2.6} fill="var(--gold-2)" opacity={0.75} />
+              <text x={lx} y={ly} fill="var(--text-3)" fontSize="10.5" fontFamily="Molan Serif, serif"
                 textAnchor={flip ? 'end' : 'start'} dominantBaseline="middle" letterSpacing="1">
                 {d.name}
               </text>
@@ -152,7 +162,7 @@ export function CharCloud({ data, limit = 110 }: { data: { c: string; n: number 
       {items.map((d, i) => {
         const k = (d.n - min) / (max - min || 1);
         const fs = 12 + Math.pow(k, 0.75) * 46;
-        const color = i % 11 === 0 ? '#74c8b6' : i % 5 === 0 ? '#d8b36a' : i % 3 === 0 ? '#c8c1af' : '#9a958a';
+        const color = i % 11 === 0 ? 'var(--jade)' : i % 5 === 0 ? 'var(--gold)' : i % 3 === 0 ? 'var(--text-2)' : 'var(--text-3)';
         return (
           <span key={d.c} title={`${d.c} · ${d.n.toLocaleString()} 次`}
             style={{ fontSize: fs, opacity: 0.42 + k * 0.55, color, fontWeight: k > 0.8 ? 600 : 400, transform: `translateY(${(i % 7) * 1.5}px)` }}>

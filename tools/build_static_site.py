@@ -47,6 +47,22 @@ LINE_TARGET_COUNT = 120
 DEFAULT_LINE_CHARS = ["月", "风", "花", "酒", "雪", "云", "山", "江"]
 CJK_RE = re.compile(r"[\u3400-\u9fff\U00020000-\U0002ffff]")
 
+
+def reset_dir(path: Path) -> None:
+    """Clear a generated directory, tolerating Windows holding a handle on the
+    directory itself (search indexer, preview pane, antivirus). In that case the
+    directory cannot be removed, but its contents can still be replaced."""
+    if path.exists():
+        try:
+            shutil.rmtree(path)
+        except PermissionError:
+            for child in path.iterdir():
+                if child.is_dir():
+                    shutil.rmtree(child)
+                else:
+                    child.unlink()
+    path.mkdir(exist_ok=True)
+
 def log(*a):
     print(f"[{time.strftime('%H:%M:%S')}]", *a, flush=True)
 
@@ -311,9 +327,7 @@ def main():
     dump(PUB / "random.json", random_ids)
     # 飞花令按字拆文件：首页只取「月」一个文件，不再下载整张表。
     lines_dir = PUB / "lines"
-    if lines_dir.exists():
-        shutil.rmtree(lines_dir)
-    lines_dir.mkdir()
+    reset_dir(lines_dir)
     for ch, data in line_out.items():
         dump(lines_dir / f"{ch}.json", data)
     dump(PUB / "stats.json", stats)
@@ -322,9 +336,7 @@ def main():
 
     # Poet bio shards: only one shard is loaded by a poet page.
     bio_dir = PUB / "poet-bio"
-    if bio_dir.exists():
-        shutil.rmtree(bio_dir)
-    bio_dir.mkdir()
+    reset_dir(bio_dir)
     groups = defaultdict(dict)
     for aid, meta in author_meta.items():
         if work_count.get(aid, 0) <= 0:

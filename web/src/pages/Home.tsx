@@ -7,11 +7,7 @@ import type { Stats } from '../types';
 import { CountUp, Reveal, SectionHead } from '../components/ui';
 import { HeroCanvas, Marquee, RadialChart, CharCloud } from '../components/visuals';
 import { Icon } from '../components/Icon';
-
-const DYN_COLOR: Record<string, string> = {
-  先秦: '#b9a78a', 汉: '#c08a63', 唐: '#d8b36a', 五代: '#b39ac4',
-  宋: '#74c8b6', 元: '#94a6c9', 清: '#cf8f8f',
-};
+import { DYN_COLOR } from '../palette';
 
 /** 按标点切句，用于竖排诗笺：每一句独立成列，避免在字中间断行 */
 function toColumns(text: string, max = 6): string[] {
@@ -54,12 +50,12 @@ function CollectionGlyph({ i }: { i: number }) {
     <svg className="coll-art" viewBox="0 0 120 120" style={{ transform: `rotate(${rot}deg)` }}>
       {[0, 1, 2, 3].map(k => (
         <circle key={k} cx="60" cy="60" r={22 + k * 11} fill="none"
-          stroke={k % 2 ? 'rgba(216,179,106,.28)' : 'rgba(116,200,182,.18)'} strokeWidth="1"
+          stroke={k % 2 ? 'var(--gold)' : 'var(--jade)'} strokeOpacity={k % 2 ? '.28' : '.2'} strokeWidth="1"
           strokeDasharray={k === 1 ? '2 7' : undefined} />
       ))}
-      <line x1="60" y1="16" x2="60" y2="104" stroke="rgba(216,179,106,.16)" />
-      <line x1="16" y1="60" x2="104" y2="60" stroke="rgba(216,179,106,.16)" />
-      <circle cx="60" cy="60" r="4" fill="rgba(216,179,106,.45)" />
+      <line x1="60" y1="16" x2="60" y2="104" stroke="var(--gold)" strokeOpacity=".18" />
+      <line x1="16" y1="60" x2="104" y2="60" stroke="var(--gold)" strokeOpacity=".18" />
+      <circle cx="60" cy="60" r="4" fill="var(--gold)" opacity=".45" />
     </svg>
   );
 }
@@ -136,14 +132,14 @@ export function Home() {
           <svg viewBox="0 0 1440 300" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
             <defs>
               <linearGradient id="ridge" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="rgba(216,179,106,.16)" />
-                <stop offset="100%" stopColor="rgba(5,6,10,0)" />
+                <stop offset="0%" stopColor="var(--gold)" stopOpacity=".18" />
+                <stop offset="100%" stopColor="var(--ink-0)" stopOpacity="0" />
               </linearGradient>
             </defs>
             <path d="M0,190 C90,150 150,178 220,140 C300,96 360,150 440,120 C520,90 590,160 680,128 C760,100 820,150 900,118 C980,86 1040,150 1120,124 C1200,98 1280,150 1360,120 L1440,140 L1440,300 L0,300 Z"
               fill="url(#ridge)" />
             <path d="M0,236 C110,200 170,226 260,196 C350,166 420,214 520,186 C620,158 690,208 790,182 C890,156 960,206 1060,178 C1160,150 1240,200 1320,176 L1440,190 L1440,300 L0,300 Z"
-              fill="rgba(216,179,106,.05)" />
+              fill="var(--gold)" opacity=".06" />
           </svg>
         </div>
 
@@ -176,24 +172,24 @@ export function Home() {
             <div className="hero-watermark">诗</div>
             <div className="orbit">
               <svg viewBox="0 0 400 400">
-                <circle cx="200" cy="200" r="150" fill="none" stroke="rgba(216,179,106,.2)" strokeWidth="1" />
-                <circle cx="200" cy="200" r="182" fill="none" stroke="rgba(216,179,106,.1)" strokeWidth="1" strokeDasharray="1 9" />
+                <circle cx="200" cy="200" r="150" fill="none" stroke="var(--gold)" strokeOpacity=".22" strokeWidth="1" />
+                <circle cx="200" cy="200" r="182" fill="none" stroke="var(--gold)" strokeOpacity=".12" strokeWidth="1" strokeDasharray="1 9" />
                 {Array.from({ length: 60 }).map((_, i) => {
                   const a = (i / 60) * Math.PI * 2;
                   const r1 = i % 5 === 0 ? 138 : 144;
                   return <line key={i} x1={200 + Math.cos(a) * r1} y1={200 + Math.sin(a) * r1}
                     x2={200 + Math.cos(a) * 150} y2={200 + Math.sin(a) * 150}
-                    stroke="rgba(216,179,106,.22)" />;
+                    stroke="var(--gold)" strokeOpacity=".24" />;
                 })}
-                <path d="M200 30 L206 194 L200 200 L194 194 Z" fill="rgba(216,179,106,.4)" />
+                <path d="M200 30 L206 194 L200 200 L194 194 Z" fill="var(--gold)" opacity=".4" />
               </svg>
               <svg viewBox="0 0 400 400" className="slow">
-                <circle cx="200" cy="200" r="110" fill="none" stroke="rgba(116,200,182,.16)" strokeWidth="1" />
-                <circle cx="200" cy="200" r="126" fill="none" stroke="rgba(216,179,106,.12)" strokeWidth="1" strokeDasharray="3 6" />
+                <circle cx="200" cy="200" r="110" fill="none" stroke="var(--jade)" strokeOpacity=".2" strokeWidth="1" />
+                <circle cx="200" cy="200" r="126" fill="none" stroke="var(--gold)" strokeOpacity=".14" strokeWidth="1" strokeDasharray="3 6" />
                 {[0, 90, 180, 270].map(a => (
                   <line key={a} x1={200 + Math.cos(a * Math.PI / 180) * 108} y1={200 + Math.sin(a * Math.PI / 180) * 108}
                     x2={200 + Math.cos(a * Math.PI / 180) * 128} y2={200 + Math.sin(a * Math.PI / 180) * 128}
-                    stroke="rgba(216,179,106,.2)" />
+                    stroke="var(--gold)" strokeOpacity=".22" />
                 ))}
               </svg>
             </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useScrolled } from '../hooks';
 import { useLang } from '../lang';
+import { applyTheme, getStoredTheme, type Theme } from '../theme';
 import { Icon } from './Icon';
 
 const links = [
@@ -13,11 +14,28 @@ const links = [
   { to: '/favorites', label: '收藏', en: 'FAVORITES' },
 ];
 
+function ThemeSwitch({ theme, onChange }: { theme: Theme; onChange: (t: Theme) => void }) {
+  return (
+    <div className="theme-toggle" aria-label="页面风格" role="group">
+      <button type="button" className={theme === 'ink' ? 'on' : ''} aria-pressed={theme === 'ink'}
+        title="墨金风格" onClick={() => onChange('ink')}>墨金</button>
+      <button type="button" className={theme === 'paper' ? 'on' : ''} aria-pressed={theme === 'paper'}
+        title="米白风格" onClick={() => onChange('paper')}>米白</button>
+    </div>
+  );
+}
+
 export function Nav({ onSearch }: { onSearch: () => void }) {
   const scrolled = useScrolled(30);
   const loc = useLocation();
   const { lang, setLang } = useLang();
   const [open, setOpen] = useState(false);
+  const [theme, setThemeState] = useState<Theme>(() => getStoredTheme());
+
+  const setTheme = (next: Theme) => {
+    setThemeState(next);
+    applyTheme(next);
+  };
 
   useEffect(() => { setOpen(false); }, [loc.pathname]);
   useEffect(() => {
@@ -59,6 +77,7 @@ export function Nav({ onSearch }: { onSearch: () => void }) {
             <button className="icon-btn" onClick={onSearch} aria-label="全文检索" title="检索 ⌘K">
               {Icon.search({})}
             </button>
+            <ThemeSwitch theme={theme} onChange={setTheme} />
             <div className="lang-toggle" aria-label="简繁切换">
               <button className={lang === 's' ? 'on' : ''} onClick={() => setLang('s')}>简</button>
               <button className={lang === 't' ? 'on' : ''} onClick={() => setLang('t')}>繁</button>
@@ -81,6 +100,10 @@ export function Nav({ onSearch }: { onSearch: () => void }) {
                 <span className="ns-en mono">{l.en}</span>
               </Link>
             ))}
+            <div className="sheet-setting">
+              <span className="mono sheet-setting-label">页面风格</span>
+              <ThemeSwitch theme={theme} onChange={setTheme} />
+            </div>
           </div>
         </div>
       )}
