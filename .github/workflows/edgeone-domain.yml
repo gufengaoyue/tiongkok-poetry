@@ -8,7 +8,7 @@ on:
       domain:
         description: Custom domain to ensure
         required: true
-        default: www.tiongkok-poetry.cn
+        default: tiongkok-poetry.cn
         type: string
 
 permissions:
@@ -22,7 +22,7 @@ jobs:
     env:
       EDGEONE_PROJECT: tiongkok-poetry
       EDGEONE_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
-      EDGEONE_DOMAIN: ${{ github.event.inputs.domain || 'www.tiongkok-poetry.cn' }}
+      EDGEONE_DOMAIN: ${{ github.event.inputs.domain || 'tiongkok-poetry.cn' }}
     steps:
       - name: Checkout site
         uses: actions/checkout@v4

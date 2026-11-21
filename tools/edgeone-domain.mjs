@@ -7,7 +7,7 @@ import { Makers } from '@edgeone/makers-sdk';
 
 const token = process.env.EDGEONE_API_TOKEN;
 const projectName = process.env.EDGEONE_PROJECT || 'tiongkok-poetry';
-const wantedDomain = process.env.EDGEONE_DOMAIN || 'www.tiongkok-poetry.cn';
+const wantedDomain = process.env.EDGEONE_DOMAIN || 'tiongkok-poetry.cn';
 const region = process.env.EDGEONE_REGION || 'global';
 
 if (!token) {
@@ -57,6 +57,18 @@ try {
   };
 
   console.log(JSON.stringify(result, null, 2));
+  const notice = [
+    `project=${result.project.name}`,
+    `area=${result.project.area || 'unknown'}`,
+    `preset=${result.project.presetDomain || 'unknown'}`,
+    `domain=${result.domain.domain}`,
+    `status=${result.domain.status || 'pending'}`,
+    `cname=${result.domain.cname || 'pending'}`,
+    verification?.recordType && verification?.recordValue
+      ? `txt=${verification.subdomain || '@'}:${verification.recordValue}`
+      : 'txt=pending',
+  ].join(' | ');
+  console.log(`::notice title=EdgeOne domain::${notice}`);
 
   const lines = [
     '### EdgeOne 自定义域名',
