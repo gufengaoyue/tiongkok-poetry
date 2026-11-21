@@ -7,8 +7,7 @@
  * token-index.json manifest next to token-offsets.json. Token boundaries are
  * used as split points so one Range request never crosses two chunks.
  *
- * This script only touches web/dist-edgeone. GitHub Pages keeps using its own
- * dist-pages build and the single token-index.bin.
+ * This script only touches web/dist-edgeone.
  */
 const fs = require('node:fs');
 const path = require('node:path');

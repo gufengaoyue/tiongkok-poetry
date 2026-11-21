@@ -1,11 +1,10 @@
 # EdgeOne Pages（Makers）部署说明
 
-EdgeOne 是独立于 GitHub Pages 的第二条发布通道。两边共用同一套源码和数据，但构建 base 不同：
+EdgeOne 是本仓库唯一的发布通道。源码和数据只维护一份，构建为根路径版本：
 
-- GitHub Pages：`/chinese-poetry/` → `web/dist-pages`
 - EdgeOne：`/` → `web/dist-edgeone`
 
-GitHub Pages 的 `gh-pages` 分支和线上站点不参与 EdgeOne 构建；只要不推送 `gh-pages`，EdgeOne 的任何操作都不会影响现有主站。
+不再保留 GitHub Pages / Cloudflare 的发布配置，`gh-pages` 也不参与 EdgeOne 构建。
 
 ## 1. 本地构建
 
@@ -121,7 +120,7 @@ EdgeOne 的默认域名只适合短期预览，长期使用需要绑定自己的
 1. GitHub 仓库 secret 里已配置 `EDGEONE_API_TOKEN`；
 2. workflow 运行成功（构建、打包、上传都不报错）。
 
-不需要在 EdgeOne 控制台里点「新建部署」，也不需要把 `gh-pages` 推到 EdgeOne。GitHub Pages 仍然由 `gh-pages` 独立发布，两条链路互不影响。
+不需要在 EdgeOne 控制台里点「新建部署」，也不需要把 `gh-pages` 推到 EdgeOne。`gh-pages` 不再参与本仓库的发布流程。
 
 > 如果以后新建了大陆项目，只需改 `.github/workflows/edgeone.yml` 顶部的 `EDGEONE_OVERSEAS_PROJECT`，并在 `tools/edgeone-deploy-overseas.mjs` 中调整项目名与 `area`；区域参数以 EdgeOne 控制台/API 为准。
 
@@ -136,22 +135,19 @@ EdgeOne 的默认域名只适合短期预览，长期使用需要绑定自己的
 - `/poem/tang-00001`、`/library`、`/atlas` 直接打开不 404
 - 墨金 / 米白主题切换可用
 
-## 8. 不影响 GitHub Pages
+## 8. 仓库只保留 EdgeOne 发布
 
-EdgeOne 相关改动只新增：
+本仓库只保留 EdgeOne 的构建与发布配置：
 
 - `web/dist-edgeone`（构建产物，已忽略）
 - `deploy/edgeone.json`
 - `tools/prepare_edgeone.js`
+- `tools/edgeone-deploy-overseas.mjs`
+- `tools/edgeone-domain.mjs`
 - `.github/workflows/edgeone.yml`
+- `.github/workflows/edgeone-domain.yml`
 - `web/public/robots.txt`
 - `deploy/EDGEONE-SECURITY.md`
 - `web` / 根目录的 `build:edgeone`、`edgeone:build`、`edgeone:zip` 脚本
 
-GitHub Pages 仍然使用：
-
-```powershell
-npm run pages:build
-```
-
-产物仍是 `web/dist-pages`，仍包含单文件 `token-index.bin` 和 `404.html`。EdgeOne 构建不会修改 `gh-pages`，也不会删除 `web/public/data/token-index.bin`。
+旧的 Cloudflare / GitHub Pages 发布配置已从 Git 移除，本机副本保留且不再上传。

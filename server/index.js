@@ -23,7 +23,7 @@ const statsRaw = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'stats.json'), '
 const authorsRaw = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'authors.json'), 'utf8'));
 const classicsRaw = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'classics.json'), 'utf8'));
 
-/* 本地全文检索索引：与线上 D1 同一张 token_index 表 */
+/* 本地全文检索索引：SQLite 的 token_index 表 */
 let tokenDb = null;
 try {
   const { DatabaseSync } = require('node:sqlite');

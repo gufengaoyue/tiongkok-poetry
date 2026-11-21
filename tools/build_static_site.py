@@ -13,11 +13,9 @@ Outputs:
   web/public/data/manifest.json
 
 Search index:
-  server/data/token-index.sqlite        (local development)
-  cloudflare/token-index/*.sql          (D1 Free import chunks)
-  cloudflare/token-schema.sql
+  server/data/token-index.sqlite        (local development / range-index source)
 
-The D1 database stores only character / bigram postings, never poem text.
+The SQLite database stores only character / bigram postings, never poem text.
 """
 
 from __future__ import annotations
@@ -37,7 +35,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "server" / "data"
 PUB = ROOT / "web" / "public" / "data"
-CF = ROOT / "cloudflare"
 
 SHARD_SIZE = 1000
 CHAR_CHUNK = 8000
@@ -350,17 +347,7 @@ def main():
     for group, items in groups.items():
         dump(bio_dir / f"{group}.json", items)
 
-    # Search token index SQL + local SQLite.
-    token_dir = CF / "token-index"
-    if token_dir.exists():
-        shutil.rmtree(token_dir)
-    token_dir.mkdir()
-    (CF / "token-schema.sql").write_text(
-        "DROP TABLE IF EXISTS token_index;\n"
-        "CREATE TABLE token_index (token TEXT NOT NULL, seq INTEGER NOT NULL, ids BLOB NOT NULL, PRIMARY KEY(token, seq));\n",
-        encoding="utf-8",
-    )
-
+    # Search token index: local SQLite only (EdgeOne reads the range index).
     db_path = DATA / "token-index.sqlite"
     if db_path.exists():
         db_path.unlink()
@@ -370,22 +357,11 @@ def main():
     db.execute("DROP TABLE IF EXISTS token_index")
     db.execute("CREATE TABLE token_index (token TEXT NOT NULL, seq INTEGER NOT NULL, ids BLOB NOT NULL, PRIMARY KEY(token, seq))")
 
-    sql_file = None
-    sql_bytes = 0
-    sql_no = 0
     token_rows = 0
     token_bytes = 0
 
-    def open_sql():
-        nonlocal sql_file, sql_bytes, sql_no
-        if sql_file:
-            sql_file.close()
-        sql_no += 1
-        sql_file = (token_dir / f"{sql_no:04d}.sql").open("w", encoding="utf-8")
-        sql_bytes = 0
-
     def emit_token(token, arr):
-        nonlocal sql_file, sql_bytes, token_rows, token_bytes
+        nonlocal token_rows, token_bytes
         chunks = []
         cur = bytearray()
         prev = 0
@@ -415,13 +391,7 @@ def main():
 
         for seq, raw in enumerate(chunks):
             token_bytes += len(raw)
-            hexs = raw.hex().upper()
-            stmt = f"INSERT INTO token_index(token,seq,ids) VALUES('{token}',{seq},X'{hexs}');\n"
             db.execute("INSERT INTO token_index(token,seq,ids) VALUES(?,?,?)", (token, seq, raw))
-            if sql_file is None or sql_bytes + len(stmt) > 8 * 1024 * 1024:
-                open_sql()
-            sql_file.write(stmt)
-            sql_bytes += len(stmt)
             token_rows += 1
 
     for ch, arr in sorted(char_postings.items()):
@@ -431,8 +401,6 @@ def main():
         if arr:
             emit_token("b:" + gram, arr)
 
-    if sql_file:
-        sql_file.close()
     db.commit()
     db.close()
 
@@ -457,7 +425,7 @@ def main():
 
     log(f"done in {time.time() - t0:.1f}s")
     log(f"poems={len(rows):,} shards={manifest['contentShards']} poets={len(poet_rows):,}")
-    log(f"token rows={token_rows:,} blob={token_bytes/1024/1024:.1f} MiB sql files={sql_no}")
+    log(f"token rows={token_rows:,} blob={token_bytes/1024/1024:.1f} MiB")
     log(f"poem-index.json={(PUB/'poem-index.json').stat().st_size/1024/1024:.1f} MiB")
     log(f"sqlite={(db_path.stat().st_size / 1024 / 1024):.1f} MiB")
 

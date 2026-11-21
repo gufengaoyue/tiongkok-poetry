@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the browser-side range index from the SQLite token index.
 
-The D1/local SQLite index stores postings in several seq chunks per token.
+The local SQLite index stores postings in several seq chunks per token.
 Each chunk starts with an absolute poem index and continues with delta
 varints.  For HTTP Range access we need one contiguous stream per token,
 so this script decodes the chunks, joins them, and writes:
@@ -9,7 +9,7 @@ so this script decodes the chunks, joins them, and writes:
   web/public/data/token-index.bin
   web/public/data/token-offsets.json
 
-GitHub Pages / any static host that supports Range can then serve a few
+EdgeOne / any static host that supports Range can then serve a few
 kilobytes per query instead of the whole 30+ MiB index.
 """
 
