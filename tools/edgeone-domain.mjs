@@ -7,7 +7,7 @@ import { Makers } from '@edgeone/makers-sdk';
 
 const token = process.env.EDGEONE_API_TOKEN;
 const projectName = process.env.EDGEONE_PROJECT || 'tiongkok-poetry';
-const wantedDomain = process.env.EDGEONE_DOMAIN || 'tiongkok-poetry.icu';
+const wantedDomain = process.env.EDGEONE_DOMAIN || 'tiongkok-poetry.cn';
 const region = process.env.EDGEONE_REGION || undefined;
 
 if (!token) {
