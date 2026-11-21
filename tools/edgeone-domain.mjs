@@ -25,6 +25,7 @@ try {
   }
 
   const detail = await makers.projects.get({ projectId: project.projectId });
+  console.log(`::notice title=EdgeOne context::region=${makers.region || 'auto'} project=${project.name} area=${detail.area || project.area || 'unknown'} preset=${detail.presetDomain || 'unknown'}`);
   let domains = await makers.domains.list({ projectId: project.projectId });
   let domain = domains.find((item) => item.domain === wantedDomain);
 
