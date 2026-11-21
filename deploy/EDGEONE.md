@@ -67,8 +67,10 @@ npm run edgeone:zip
 控制台「构建部署 → 新建部署」上传 `molan-edgeone.zip` 到生产环境；或用 CLI：
 
 ```powershell
-npx edgeone makers deploy molan-edgeone.zip -n chinese-poetry
+npx edgeone@1.7.5 makers deploy molan-edgeone.zip -n chinese-poetry
 ```
+
+CLI 固定使用 `edgeone@1.7.5`：`1.7.6` 依赖的 `@edgeone/opennextjs-pages@0.2.10-beta.16` 目前在 npm 上不可用，`latest` 会在部署前安装失败。
 
 CLI 会自己生成 `.edgeone` 临时目录；这个目录已被 `.gitignore` 忽略，不要放进最终 ZIP。
 

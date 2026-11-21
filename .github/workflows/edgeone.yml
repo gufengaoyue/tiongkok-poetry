@@ -59,7 +59,7 @@ jobs:
         if: steps.token.outputs.ready == 'true'
         shell: pwsh
         run: |
-          npx -y edgeone@latest makers deploy molan-edgeone.zip `
+          npx -y edgeone@1.7.5 makers deploy molan-edgeone.zip `
             -n $env:EDGEONE_PROJECT `
             -t $env:EDGEONE_API_TOKEN `
             -e production `
