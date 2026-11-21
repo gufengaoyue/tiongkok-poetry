@@ -16,7 +16,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 40
     env:
-      EDGEONE_PROJECT: chinese-poetry
+      EDGEONE_PROJECT: tiongkok-poetry
       EDGEONE_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
 
     steps:

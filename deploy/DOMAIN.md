@@ -10,7 +10,7 @@
 
 ## 2. 在 EdgeOne 添加域名
 
-1. 进入 EdgeOne Makers 控制台 → 项目 `chinese-poetry` → **域名管理**。
+1. 进入 EdgeOne Makers 控制台 → 项目 `tiongkok-poetry` → **域名管理**。
 2. 点击「添加自定义域名」，填入完整域名（例如 `poetry.example.com`）。
 3. 加速区域保持当前项目区域；系统会给出**归属验证值**和 **CNAME 目标**，以控制台显示为准。
 4. 如果控制台要求归属验证：到域名 DNS 服务商添加一条 `TXT` 记录，主机记录和值照控制台复制。
@@ -20,7 +20,7 @@
 
 ## 3. 自动部署与域名互不影响
 
-`.github/workflows/edgeone.yml` 部署的是同一个 EdgeOne 项目 `chinese-poetry`，所以：
+`.github/workflows/edgeone.yml` 部署的是同一个 EdgeOne 项目 `tiongkok-poetry`，所以：
 
 - 域名绑定一次即可；
 - 以后 push `main` 自动更新的是项目内容，不会丢域名；

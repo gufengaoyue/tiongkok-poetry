@@ -44,7 +44,7 @@ GitHub Pages 的构建仍保留单个 `token-index.bin`；前端在没有 `token
 1. `npm ci --prefix web`
 2. `npm run edgeone:build`
 3. `npm run edgeone:zip`
-4. 用 `edgeone makers deploy molan-edgeone.zip -n chinese-poetry -t <token>` 更新现有 EdgeOne 生产项目
+4. 用 `edgeone makers deploy molan-edgeone.zip -n tiongkok-poetry -t <token>` 新建/更新 EdgeOne 生产项目
 
 这套方案不改变当前项目的「直接上传」类型，也不依赖 EdgeOne 自己的 Git 构建环境；构建在 GitHub 的 Windows runner 上完成，所以 `server/data` 里已提交的 8 个语料文件、Python、Vite 和 `pwsh` 都可控。
 
@@ -67,7 +67,7 @@ npm run edgeone:zip
 控制台「构建部署 → 新建部署」上传 `molan-edgeone.zip` 到生产环境；或用 CLI：
 
 ```powershell
-npx edgeone@1.7.5 makers deploy molan-edgeone.zip -n chinese-poetry
+npx edgeone@1.7.5 makers deploy molan-edgeone.zip -n tiongkok-poetry
 ```
 
 CLI 固定使用 `edgeone@1.7.5`：`1.7.6` 依赖的 `@edgeone/opennextjs-pages@0.2.10-beta.16` 目前在 npm 上不可用，`latest` 会在部署前安装失败。
