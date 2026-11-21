@@ -5,7 +5,8 @@ import type { ClassicBook, PoetBrief, PoemBrief, PoemDetail, Stats } from './typ
  *
  * 诗库正文放在 /data/poems/NNNN.json，每片 1000 首；
  * 浏览索引 /data/poem-index.json 只含卡片与排序需要的字段；
- * 全文检索由 /api/search-candidates 返回候选序号，正文仍在静态分片里按需读取。
+ * 全文检索在开发服务器下由 /api/search-candidates 返回候选序号；
+ * 生产静态构建直接走 /data/token-offsets.json + 索引分片的 HTTP Range。
  */
 
 const BASE = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
@@ -279,23 +280,26 @@ async function bodyCandidates(q: string): Promise<number[]> {
   if (hit) return hit;
 
   const p = (async () => {
-    // Cloudflare / 本地 Node 有服务端索引，优先使用。
-    try {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 2500);
-      const r = await fetch(`${API_ROOT}/search-candidates?q=${encodeURIComponent(key)}`, {
-        signal: ctrl.signal,
-        cache: 'no-store',
-      });
-      clearTimeout(timer);
-      if (r.ok) {
-        const d = await r.json();
-        return Array.isArray(d?.ids)
-          ? d.ids.map((x: any) => Number(x)).filter((x: number) => Number.isInteger(x) && x >= 0)
-          : [];
+    // 本地开发服务器有 /api/search-candidates；纯静态构建（Pages / EdgeOne）
+    // 不要探测它，否则 SPA 回退会把 index.html 当成 JSON 解析。
+    if (import.meta.env.DEV) {
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 2500);
+        const r = await fetch(`${API_ROOT}/search-candidates?q=${encodeURIComponent(key)}`, {
+          signal: ctrl.signal,
+          cache: 'no-store',
+        });
+        clearTimeout(timer);
+        if (r.ok) {
+          const d = await r.json();
+          return Array.isArray(d?.ids)
+            ? d.ids.map((x: any) => Number(x)).filter((x: number) => Number.isInteger(x) && x >= 0)
+            : [];
+        }
+      } catch {
+        // 开发服务器不可用时继续使用静态索引。
       }
-    } catch {
-      // GitHub Pages 没有 /api，落到静态 Range 索引。
     }
     return staticCandidates(key);
   })();
@@ -305,12 +309,20 @@ async function bodyCandidates(q: string): Promise<number[]> {
   return p;
 }
 
-// ---- 静态 Range 检索索引 (GitHub Pages 等纯静态托管) ----
+// ---- 静态 Range 检索索引 (GitHub Pages / EdgeOne 等纯静态托管) ----
 type RangeEntry = [string, number, number];
+type RangeChunk = { file: string; start: number; bytes: number };
+type RangeManifest = {
+  chunkBytes: number;
+  totalBytes: number;
+  count: number;
+  chunks: RangeChunk[];
+};
 
 let rangeMapPromise: Promise<Map<string, [number, number]>> | null = null;
+let rangeManifestPromise: Promise<RangeManifest | null> | null = null;
 const rangePostingCache = new Map<string, Promise<number[]>>();
-let fullRangePromise: Promise<Uint8Array> | null = null;
+const fullRangePromises = new Map<string, Promise<Uint8Array>>();
 
 function loadRangeMap(): Promise<Map<string, [number, number]>> {
   if (rangeMapPromise) return rangeMapPromise;
@@ -325,6 +337,51 @@ function loadRangeMap(): Promise<Map<string, [number, number]>> {
       throw err;
     });
   return rangeMapPromise;
+}
+
+/**
+ * EdgeOne has a 25 MiB per-file limit, so the build can split the binary
+ * index into token-aligned chunks and publish a small manifest. GitHub Pages
+ * keeps its single token-index.bin, where this manifest is absent and we
+ * transparently fall back to the old path.
+ */
+function loadRangeManifest(): Promise<RangeManifest | null> {
+  if (rangeManifestPromise) return rangeManifestPromise;
+  rangeManifestPromise = getJson<RangeManifest>('token-index.json')
+    .then(meta => (meta && Array.isArray(meta.chunks) && meta.chunks.length ? meta : null))
+    .catch(() => null);
+  return rangeManifestPromise;
+}
+
+function findRangeChunk(meta: RangeManifest, off: number): RangeChunk | null {
+  let lo = 0;
+  let hi = meta.chunks.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const cur = meta.chunks[mid];
+    if (off < cur.start) hi = mid - 1;
+    else if (off >= cur.start + cur.bytes) lo = mid + 1;
+    else return cur;
+  }
+  return null;
+}
+
+function fullRange(url: string): Promise<Uint8Array> {
+  let p = fullRangePromises.get(url);
+  if (!p) {
+    p = fetch(url, { cache: 'default' })
+      .then(r => {
+        if (!r.ok) throw new Error(`range ${r.status}`);
+        return r.arrayBuffer();
+      })
+      .then(b => new Uint8Array(b))
+      .catch(err => {
+        fullRangePromises.delete(url);
+        throw err;
+      });
+    fullRangePromises.set(url, p);
+  }
+  return p;
 }
 
 function decodeVarints(buf: Uint8Array, start: number, length: number): number[] {
@@ -359,9 +416,12 @@ async function readPostings(token: string, off: number, len: number): Promise<nu
   const hit = rangePostingCache.get(cacheKey);
   if (hit) return hit;
   const p = (async () => {
-    const url = `${ROOT}/token-index.bin`;
+    const manifest = await loadRangeManifest();
+    const chunk = manifest ? findRangeChunk(manifest, off) : null;
+    const url = chunk ? `${ROOT}/${chunk.file}` : `${ROOT}/token-index.bin`;
+    const localOff = chunk ? off - chunk.start : off;
     const r = await fetch(url, {
-      headers: { Range: `bytes=${off}-${off + len - 1}` },
+      headers: { Range: `bytes=${localOff}-${localOff + len - 1}` },
       cache: 'default',
     });
     if (r.status === 206) {
@@ -369,10 +429,9 @@ async function readPostings(token: string, off: number, len: number): Promise<nu
       return decodeVarints(buf, 0, buf.byteLength);
     }
     if (r.ok) {
-      // 某些静态服务器忽略 Range，回退到一次性下载后切片。
-      if (!fullRangePromise) fullRangePromise = r.arrayBuffer().then(b => new Uint8Array(b));
-      const full = await fullRangePromise;
-      return decodeVarints(full, off, len);
+      // 某些静态服务器忽略 Range，回退到一次性下载当前分片后切片。
+      const full = await fullRange(url);
+      return decodeVarints(full, localOff, len);
     }
     throw new Error(`range ${r.status}`);
   })().catch(err => {

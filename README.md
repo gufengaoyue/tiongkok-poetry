@@ -11,9 +11,10 @@
 | 通道 | 地址 | 说明 |
 | --- | --- | --- |
 | **GitHub Pages（主站）** | **https://gufengaoyue.github.io/chinese-poetry/** | 国内可直连，纯静态，免费 |
+| EdgeOne Pages（国内备用） | 待绑定自定义域名 | 根路径构建与分片检索已验收；默认域名仅短期预览 |
 | Cloudflare Workers（备用） | https://molan-verse-archive.gufengaoyue.workers.dev | 海外可用；当前网络下 `workers.dev` 被 DNS 污染，国内无法直连 |
 
-GitHub Pages 是当前实际可用的主站。Cloudflare 版本保留作为海外镜像；若以后绑定自定义域名，也可以继续使用。
+GitHub Pages 是当前实际可用的主站。EdgeOne 是独立的第二条发布通道，不会替换或影响 GitHub Pages；Cloudflare 版本保留作为海外镜像。
 
 ---
 
@@ -95,7 +96,11 @@ GitHub Pages 是当前实际可用的主站。Cloudflare 版本保留作为海�
 │  ├─ build_range_index.py      # 生成 token-index.bin + token-offsets.json
 │  ├─ prepare_cloudflare.js     # 复制运行期 JSON
 │  ├─ prepare_pages.js          # 404.html / .nojekyll
+│  ├─ prepare_edgeone.js        # EdgeOne 根路径、SPA 与索引分片
 │  └─ build_fonts.py            # 字体子集
+├─ deploy/
+│  ├─ edgeone.json              # EdgeOne SPA 回退
+│  └─ EDGEONE.md                # 可选：EdgeOne 部署
 ├─ cloudflare/
 │  ├─ worker.js                 # /api/health + /api/search-candidates + 静态资源
 │  ├─ token-schema.sql          # D1 检索表
@@ -106,7 +111,8 @@ GitHub Pages 是当前实际可用的主站。Cloudflare 版本保留作为海�
 │  ├─ src/                      # React 源码
 │  ├─ public/data/              # 静态数据（生成）
 │  ├─ dist/                     # Cloudflare 构建（根路径）
-│  └─ dist-pages/               # GitHub Pages 构建（/chinese-poetry/ 前缀）
+│  ├─ dist-pages/               # GitHub Pages 构建（/chinese-poetry/ 前缀）
+│  └─ dist-edgeone/             # EdgeOne 构建（根路径，25MB 分片）
 ├─ 启动网站.bat
 ├─ package.json
 └─ README.md
@@ -148,6 +154,8 @@ npm run dev
 ```powershell
 npm run build          # Cloudflare 根路径版 web/dist
 npm run build:pages    # GitHub Pages 子路径版 web/dist-pages
+npm run edgeone:build  # EdgeOne 根路径版 web/dist-edgeone（含 25MB 分片）
+npm run edgeone:zip    # 生成控制台上传用 molan-edgeone.zip
 ```
 
 ---
@@ -236,11 +244,36 @@ https://gufengaoyue.github.io/chinese-poetry/
 
 重跑 `npm run pages:build`，重新推送 `gh-pages` 即可。只需替换该分支，不影响 `main`。
 
-> `gh-pages` 是一个只含构建产物的发布分支，不要在其中改源码。搜索接口不需要任何后端；`/api` 请求在 Pages 上返回 404 后，前端自动切换到 Range 索引。
+> `gh-pages` 是一个只含构建产物的发布分支，不要在其中改源码。搜索不需要任何后端；生产构建直接使用静态 Range 索引，不再探测 `/api`。
 
 ---
 
-## 七、可选：Cloudflare 部署
+## 七、可选：EdgeOne Pages
+
+EdgeOne 使用根路径构建，产物在 `web/dist-edgeone`，与 GitHub Pages 的 `/chinese-poetry/` 子路径构建完全分开。
+
+```powershell
+npm run edgeone:build
+```
+
+构建完成后上传 `molan-edgeone.zip`，或在登录 CLI 后执行：
+
+```powershell
+npx edgeone makers deploy web\dist-edgeone -n chinese-poetry
+```
+
+关键点：
+
+- `deploy/edgeone.json` 负责 SPA 路由回退；
+- 30.9 MiB 的 `token-index.bin` 会按 token 边界拆成两个 16 MiB 以内的分片，并生成 `token-index.json` 清单；
+- 前端按全局偏移选择分片，再对分片做局部 Range；
+- EdgeOne 的默认域名只适合短期预览，长期访问需要绑定自定义域名；含中国大陆加速需 ICP 备案，不含中国大陆可选择海外节点。
+
+完整步骤、限制和验收清单见 [`deploy/EDGEONE.md`](deploy/EDGEONE.md)。
+
+---
+
+## 八、可选：Cloudflare 部署
 
 Cloudflare 版保留作为海外镜像，使用 `worker.js` + Static Assets + 一个很小的 D1 检索表。详细步骤见 [`cloudflare/CLOUDFLARE.md`](cloudflare/CLOUDFLARE.md)。
 
@@ -254,7 +287,7 @@ https://molan-verse-archive.gufengaoyue.workers.dev
 
 ---
 
-## 八、数据来源与处理
+## 九、数据来源与处理
 
 原始数据来自 **chinese-poetry**（MIT License），包含全唐诗、全宋诗、全宋词、元曲、诗经、楚辞、花间集、南唐二主词、千家诗、水墨唐诗、纳兰词、曹操诗集等 12 部总集，以及论语、孟子、大学、中庸等 14 部典籍。
 
@@ -271,7 +304,7 @@ https://molan-verse-archive.gufengaoyue.workers.dev
 
 ---
 
-## 九、本地 API
+## 十、本地 API
 
 本地 `server/index.js` 提供与前端静态层同语义的接口，默认监听 `127.0.0.1:5177`：
 
@@ -288,15 +321,16 @@ https://molan-verse-archive.gufengaoyue.workers.dev
 | `/api/classics` / `/api/classics/:id` | 典籍目录与全文 |
 | `/api/search-candidates` | 检索候选序号（仅本地 / Cloudflare） |
 
-线上 GitHub Pages 是无服务端版本；前端 `web/src/api.ts` 会优先尝试 `/api/search-candidates`，失败后自动使用 `/data/token-index.bin` 的 Range 索引。
+GitHub Pages 与 EdgeOne 都是无服务端静态版本。开发服务器下前端优先使用 `/api/search-candidates`；生产构建直接使用静态 Range 索引。GitHub Pages 用单个 `data/token-index.bin`；EdgeOne 用 `data/token-index.json` 清单加两个分片，前端会自动选择。
 
 ---
 
-## 十、验证记录
+## 十一、验证记录
 
 - 首页、诗库、诗页、诗人页、全文检索已在 GitHub Pages 线上截图验证。
 - `/search?q=明月` 返回 **5,027 条**，与本地 D1 版本一致。
 - 单字「月」检索正常；诗页正文、作者档案、同作者推荐正常。
+- EdgeOne 根路径构建已验收：`/search?q=明月` 5,027 条，`/search?q=奇` 9,730 条；第二片 `token-index-001.bin` 的 Range 传输约 10 KB。GitHub Pages 线上仍使用旧的单文件 `token-index.bin`，未受影响。
 - Git 提交：`gh-pages` 为发布分支；源码在 `main`。
 
 ## License
