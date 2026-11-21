@@ -8,14 +8,8 @@
 
 ## 在线地址
 
-| 项 | 值 |
-| --- | --- |
-| GitHub Pages | `https://gufengaoyue.github.io/tiongkok-poetry/` |
-| EdgeOne | `https://tiongkok-poetry.cn`（海外节点，归属验证中） |
-| EdgeOne 项目 | `tiongkok-poetry-overseas`（`overseas`，全球可用区不含中国大陆） |
-| 自动部署分支 | 两条链路都监听 `main`；Pages 发布到 `gh-pages`，EdgeOne 发布到 `Production` |
-
-> `git commit` 本身不会发布，必须 `git push origin main`。`gh-pages` 是 GitHub Pages 的发布分支，不参与 EdgeOne 部署。
+- GitHub Pages：`https://gufengaoyue.github.io/tiongkok-poetry/`
+- EdgeOne：`https://tiongkok-poetry.cn`
 
 ## 网站功能
 
@@ -33,29 +27,6 @@
 
 设计上提供墨金（默认）与米白 / 宣纸两套主题；桌面端与移动端均可切换并记忆。中文标题使用 Noto Serif SC 子集，图表全部为手写 SVG / Canvas，无 UI 组件库、无图表库。
 
-## 免费架构
-
-站点不依赖付费 Worker、不依赖数据库全库，全部运行在免费额度内：
-
-```text
-浏览器
-  ├─ 静态页面 / 字体 / 样式         EdgeOne Pages
-  ├─ 诗库正文分片                   /data/poems/0001..0346.json
-  ├─ 浏览索引（8 段）               /data/poem-index-000..007.json
-  ├─ 诗人 / 每日 / 随机 / 飞花令    /data/*.json
-  └─ 全文检索
-       └─ HTTP Range 读取 /data/token-index-000.bin + 001.bin
-```
-
-关键点：
-
-1. 诗库正文按 1,000 首一片切成 346 个 JSON，单文件约 300 KB，页面按需读取。
-2. 浏览索引切成 8 段，每段约 43,174 首，低于平台单文件限制。
-3. 全文检索索引约 30.9 MiB，包含 12,682 个单字和 20,000 个高频二元组，共 2,604 万条 postings。
-4. 索引按 token 切成连续字节流，浏览器用 `Range: bytes=...` 只取查询涉及的几 KB，不下载整份索引。
-5. `token-offsets.json`（0.8 MiB）记录每个 token 的偏移和长度，只在首次检索时加载。
-6. 静态站不需要任何服务端函数；EdgeOne 免费额度足够个人访问。
-
 ## 目录
 
 ```text
@@ -66,30 +37,15 @@
 ├─ tools/
 │  ├─ build_corpus.py           # 原始 JSON → TSV / authors / stats
 │  ├─ build_static_site.py      # 静态分片、诗人、飞花令
-│  ├─ build_range_index.py      # token-index.bin / token-offsets.json / EdgeOne 分片
-│  ├─ prepare_edgeone.js        # EdgeOne 根路径、SPA 与索引分片
-│  ├─ prepare_pages.js          # GitHub Pages 404 / .nojekyll
-│  ├─ edgeone-deploy-overseas.mjs # Makers SDK 部署到 overseas 项目
-│  ├─ edgeone-domain.mjs        # 自定义域名绑定与 DNS 记录输出
-│  ├─ zip_edgeone.ps1           # 生成上传 ZIP
+│  ├─ build_range_index.py      # token-index.bin / token-offsets.json
 │  └─ build_fonts.py            # 字体子集
-├─ deploy/
-│  ├─ edgeone.json              # SPA 回退 + 安全响应头
-│  └─ *.md                      # 部署手册仅保留本地，不随仓库发布
 ├─ web/
 │  ├─ src/                      # React 源码
 │  ├─ public/                   # 字体、robots、小型运行期数据
-│  ├─ dist-pages/               # GitHub Pages 构建产物（gitignore）
-│  └─ dist-edgeone/             # EdgeOne 构建产物（gitignore）
-├─ .github/workflows/
-│  ├─ pages.yml                # push main → 构建 → 发布 gh-pages
-│  ├─ edgeone.yml               # push main → 构建 → 部署 Production
-│  └─ edgeone-domain.yml        # 部署成功后确保自定义域名
+│  └─ package.json
 ├─ package.json
 └─ README.md
 ```
-
-> 旧 Cloudflare 发布配置已从 Git 移除；本机文件保留在本地，不再上传。GitHub Pages 已恢复为与 EdgeOne 并行的发布通道。
 
 ## 本地运行
 
@@ -111,31 +67,6 @@ npm start
 cd web
 npm run dev
 ```
-
-## 构建与发布
-
-```powershell
-npm run pages:build     # GitHub Pages 子路径版 web/dist-pages
-npm run edgeone:build   # 生成 web/dist-edgeone
-npm run edgeone:zip     # 生成 molan-edgeone.zip
-```
-
-推送到 `main` 后，两条 GitHub Actions 会并行发布：
-
-```text
-.github/workflows/pages.yml      → npm run pages:build   → gh-pages
-.github/workflows/edgeone.yml    → npm run edgeone:build → EdgeOne Production
-```
-
-GitHub Pages 的 base 是 `/tiongkok-poetry/`；EdgeOne 的 base 是 `/`。两个构建产物和发布分支互不影响。`main` 更新才会触发；`git commit` 本身不会发布。
-
-## 域名与访问区域
-
-`tiongkok-poetry.cn` 未备案，因此使用 EdgeOne 的 `overseas` 区域（全球可用区，不含中国大陆）。该区域绑定自定义域名不要求 ICP，但只走大陆以外节点；国内访问是跨境链路，速度不承诺。
-
-**免备案不等于大陆加速。** 要使用大陆节点，必须先完成 ICP 备案并新建「中国大陆可用区」项目；当前项目不能直接改区域。
-
-域名归属 TXT、CNAME 和验收步骤属于内部运维记录，保存在本地 `deploy/` 目录，不随仓库发布。
 
 ## 数据来源与处理
 

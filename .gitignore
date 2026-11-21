@@ -1,5 +1,6 @@
 # local-only documentation and retired deployment sources
 LOCAL-NOTES.md
+部署.md
 deploy/*.md
 cloudflare/
 tools/build_cloudflare_seed.py
