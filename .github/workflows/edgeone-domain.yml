@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      EDGEONE_PROJECT: tiongkok-poetry
+      EDGEONE_PROJECT: tiongkok-poetry-cn
       EDGEONE_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
       EDGEONE_DOMAIN: ${{ github.event.inputs.domain || 'tiongkok-poetry.cn' }}
     steps:
