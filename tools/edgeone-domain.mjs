@@ -8,14 +8,14 @@ import { Makers } from '@edgeone/makers-sdk';
 const token = process.env.EDGEONE_API_TOKEN;
 const projectName = process.env.EDGEONE_PROJECT || 'tiongkok-poetry';
 const wantedDomain = process.env.EDGEONE_DOMAIN || 'tiongkok-poetry.cn';
-const region = process.env.EDGEONE_REGION || 'global';
+const region = process.env.EDGEONE_REGION || undefined;
 
 if (!token) {
   console.error('EDGEONE_API_TOKEN is required');
   process.exit(1);
 }
 
-const makers = new Makers({ token, region });
+const makers = new Makers(region ? { token, region } : { token });
 
 try {
   const projects = await makers.projects.list({ name: projectName, pageSize: 50 });
