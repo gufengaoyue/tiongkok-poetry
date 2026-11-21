@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:pages": "tsc -b && vite build --base=/tiongkok-poetry/ --outDir dist-pages",
     "build:edgeone": "tsc -b && vite build --base=/ --outDir dist-edgeone",
     "preview": "vite preview"
   },

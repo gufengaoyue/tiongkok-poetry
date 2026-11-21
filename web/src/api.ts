@@ -723,7 +723,7 @@ async function flyLines(params: Record<string, any>) {
     all = await getJson<{ total: number; items: any[] }>(`lines/${encodeURIComponent(ch)}.json`);
   } catch {}
   if (all) {
-    return { char: ch, total: all.total, page, size, items: all.items.slice((page - 1) * size, page * size) };
+    return { char: ch, total: all.items.length, corpusTotal: all.total, page, size, items: all.items.slice((page - 1) * size, page * size) };
   }
   // 少见的字：用检索候选回查少量正文，现取飞花令。
   return dynamicLines(ch, page, size);

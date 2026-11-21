@@ -10,6 +10,7 @@
     "edgeone:index": "python tools/build_static_site.py && python tools/build_range_index.py",
     "edgeone:build": "npm run edgeone:index && npm --prefix web run build:edgeone && node tools/prepare_edgeone.js",
     "edgeone:prepare": "node tools/prepare_edgeone.js",
+    "pages:build": "npm run edgeone:index && npm --prefix web run build:pages && node tools/prepare_pages.js",
     "edgeone:zip": "pwsh -NoProfile -ExecutionPolicy Bypass -File tools/zip_edgeone.ps1"
   },
   "engines": {

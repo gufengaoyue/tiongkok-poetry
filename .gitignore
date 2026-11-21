@@ -1,9 +1,9 @@
 # local-only documentation and retired deployment sources
 LOCAL-NOTES.md
+deploy/*.md
 cloudflare/
 tools/build_cloudflare_seed.py
 tools/prepare_cloudflare.js
-tools/prepare_pages.js
 tools/split_d1_sql.py
 tools/test_cloudflare_worker.mjs
 tools/reencode_tokens.py

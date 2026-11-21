@@ -10,12 +10,12 @@
 
 | 项 | 值 |
 | --- | --- |
-| 站点 | `https://tiongkok-poetry.cn`（EdgeOne 海外节点，归属验证中） |
+| GitHub Pages | `https://gufengaoyue.github.io/tiongkok-poetry/` |
+| EdgeOne | `https://tiongkok-poetry.cn`（海外节点，归属验证中） |
 | EdgeOne 项目 | `tiongkok-poetry-overseas`（`overseas`，全球可用区不含中国大陆） |
-| 自动部署分支 | `main` |
-| 当前部署方式 | GitHub Actions 构建 ZIP，调用 EdgeOne Makers SDK 发布到 `Production` |
+| 自动部署分支 | 两条链路都监听 `main`；Pages 发布到 `gh-pages`，EdgeOne 发布到 `Production` |
 
-> `gh-pages` 不是 EdgeOne 的部署分支。EdgeOne 只监听 `main`；`git commit` 本身不会发布，必须 `git push origin main`。
+> `git commit` 本身不会发布，必须 `git push origin main`。`gh-pages` 是 GitHub Pages 的发布分支，不参与 EdgeOne 部署。
 
 ## 网站功能
 
@@ -68,27 +68,28 @@
 │  ├─ build_static_site.py      # 静态分片、诗人、飞花令
 │  ├─ build_range_index.py      # token-index.bin / token-offsets.json / EdgeOne 分片
 │  ├─ prepare_edgeone.js        # EdgeOne 根路径、SPA 与索引分片
+│  ├─ prepare_pages.js          # GitHub Pages 404 / .nojekyll
 │  ├─ edgeone-deploy-overseas.mjs # Makers SDK 部署到 overseas 项目
 │  ├─ edgeone-domain.mjs        # 自定义域名绑定与 DNS 记录输出
 │  ├─ zip_edgeone.ps1           # 生成上传 ZIP
 │  └─ build_fonts.py            # 字体子集
 ├─ deploy/
 │  ├─ edgeone.json              # SPA 回退 + 安全响应头
-│  ├─ EDGEONE.md                # EdgeOne 部署说明
-│  ├─ EDGEONE-SECURITY.md       # 反爬 / WAF 清单
-│  └─ DOMAIN.md                 # 自定义域名接入
+│  └─ *.md                      # 部署手册仅保留本地，不随仓库发布
 ├─ web/
 │  ├─ src/                      # React 源码
 │  ├─ public/                   # 字体、robots、小型运行期数据
+│  ├─ dist-pages/               # GitHub Pages 构建产物（gitignore）
 │  └─ dist-edgeone/             # EdgeOne 构建产物（gitignore）
 ├─ .github/workflows/
+│  ├─ pages.yml                # push main → 构建 → 发布 gh-pages
 │  ├─ edgeone.yml               # push main → 构建 → 部署 Production
 │  └─ edgeone-domain.yml        # 部署成功后确保自定义域名
 ├─ package.json
 └─ README.md
 ```
 
-> 旧的 Cloudflare / GitHub Pages 发布配置已从 Git 移除；本机文件保留在本地，不再上传。
+> 旧 Cloudflare 发布配置已从 Git 移除；本机文件保留在本地，不再上传。GitHub Pages 已恢复为与 EdgeOne 并行的发布通道。
 
 ## 本地运行
 
@@ -114,20 +115,19 @@ npm run dev
 ## 构建与发布
 
 ```powershell
+npm run pages:build     # GitHub Pages 子路径版 web/dist-pages
 npm run edgeone:build   # 生成 web/dist-edgeone
 npm run edgeone:zip     # 生成 molan-edgeone.zip
 ```
 
-推送到 `main` 后，`.github/workflows/edgeone.yml` 会自动执行：
+推送到 `main` 后，两条 GitHub Actions 会并行发布：
 
 ```text
-npm ci --prefix web
-npm run edgeone:build
-npm run edgeone:zip
-node tools/edgeone-deploy-overseas.mjs
+.github/workflows/pages.yml      → npm run pages:build   → gh-pages
+.github/workflows/edgeone.yml    → npm run edgeone:build → EdgeOne Production
 ```
 
-部署目标是 `tiongkok-poetry-overseas` 的 `Production` 环境。`main` 更新才会触发；`gh-pages` 不参与 EdgeOne 发布。
+GitHub Pages 的 base 是 `/tiongkok-poetry/`；EdgeOne 的 base 是 `/`。两个构建产物和发布分支互不影响。`main` 更新才会触发；`git commit` 本身不会发布。
 
 ## 域名与访问区域
 
@@ -135,7 +135,7 @@ node tools/edgeone-deploy-overseas.mjs
 
 **免备案不等于大陆加速。** 要使用大陆节点，必须先完成 ICP 备案并新建「中国大陆可用区」项目；当前项目不能直接改区域。
 
-域名归属 TXT、CNAME 和验收步骤见 [`deploy/DOMAIN.md`](deploy/DOMAIN.md)。
+域名归属 TXT、CNAME 和验收步骤属于内部运维记录，保存在本地 `deploy/` 目录，不随仓库发布。
 
 ## 数据来源与处理
 

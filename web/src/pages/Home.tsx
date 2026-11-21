@@ -63,21 +63,40 @@ function CollectionGlyph({ i }: { i: number }) {
 function FlyFlower({ size = 9 }: { size?: number }) {
   const [ch, setCh] = useState('月');
   const [input, setInput] = useState('月');
-  const { data } = useApi<any>('/lines', { char: ch, size }, ch.length > 0 && ch.length <= 2);
+  const [page, setPage] = useState(1);
+  const [expanded, setExpanded] = useState(false);
+  const pageSize = expanded ? size * 2 : size;
+  const { data } = useApi<any>('/lines', { char: ch, size: pageSize, page }, ch.length > 0 && ch.length <= 2);
   const { tr } = useLang();
+  const total = Number(data?.total) || 0;
+  const corpusTotal = Number(data?.corpusTotal) || 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const chars = ['月', '风', '花', '酒', '雪', '云', '山', '江'];
+
+  const choose = (next: string) => {
+    setCh(next);
+    setInput(next);
+    setPage(1);
+  };
+  const goPage = (next: number) => setPage(Math.min(Math.max(1, next), totalPages));
+  const shuffle = () => {
+    if (totalPages <= 1) return;
+    const next = 1 + Math.floor(Math.random() * totalPages);
+    setPage(next === page ? (next % totalPages) + 1 : next);
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 18 }}>
         <input className="input" style={{ maxWidth: 200 }} value={input} maxLength={2}
           onChange={e => setInput(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && input.trim()) setCh(input.trim()); }}
+          onKeyDown={e => { if (e.key === 'Enter' && input.trim()) choose(input.trim()); }}
           placeholder="输入一个字" />
-        <button className="btn small" onClick={() => input.trim() && setCh(input.trim())}>令</button>
+        <button className="btn small" onClick={() => input.trim() && choose(input.trim())}>令</button>
       </div>
       <div className="filter-bar" style={{ marginBottom: 24 }}>
         {chars.map(c => (
-          <button key={c} className={`chip ${ch === c ? 'active' : ''}`} onClick={() => { setCh(c); setInput(c); }}>{c}</button>
+          <button key={c} className={`chip ${ch === c ? 'active' : ''}`} onClick={() => choose(c)}>{c}</button>
         ))}
       </div>
       <div>
@@ -94,7 +113,25 @@ function FlyFlower({ size = 9 }: { size?: number }) {
             </div>
           </Link>
         ))}
+        {!data?.items?.length && <div className="panel-label" style={{ padding: '18px 0' }}>暂无匹配诗句</div>}
       </div>
+      {total > 0 && (
+        <div className="fly-footer">
+          <span className="panel-label">
+            精选 {total.toLocaleString()} 句
+            {corpusTotal > total ? ` · 全库 ${corpusTotal.toLocaleString()} 句` : ''}
+            {' '}· 第 {page} / {totalPages} 页
+          </span>
+          <div className="fly-actions">
+            <button className="btn small ghost" disabled={page <= 1} onClick={() => goPage(page - 1)}>上一页</button>
+            <button className="btn small ghost" onClick={shuffle} disabled={totalPages <= 1}>换一批</button>
+            <button className="btn small ghost" onClick={() => { setExpanded(v => !v); setPage(1); }}>
+              {expanded ? '收起列表' : '显示更多'}
+            </button>
+            <button className="btn small ghost" disabled={page >= totalPages} onClick={() => goPage(page + 1)}>下一页</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

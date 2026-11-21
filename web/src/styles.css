@@ -1180,3 +1180,37 @@ html[data-theme="paper"] .footer { background: transparent; }
   .bar-name { font-size: 14px !important; }
   .bar-val { font-size: 10px; }
 }
+
+.fly-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.fly-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fly-footer .panel-label {
+  color: var(--text-3);
+}
+.fly-footer .btn:disabled {
+  opacity: .38;
+  cursor: not-allowed;
+}
+
+@media (max-width: 620px) {
+  .fly-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .fly-actions {
+    width: 100%;
+  }
+}
