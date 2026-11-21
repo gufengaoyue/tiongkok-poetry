@@ -1,0 +1,39 @@
+name: Bind EdgeOne Domain
+on:
+  workflow_run:
+    workflows: ["Deploy EdgeOne"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: Custom domain to ensure
+        required: true
+        default: www.tiongkok-poetry.cn
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  bind:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      EDGEONE_PROJECT: tiongkok-poetry
+      EDGEONE_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
+      EDGEONE_DOMAIN: ${{ github.event.inputs.domain || 'www.tiongkok-poetry.cn' }}
+    steps:
+      - name: Checkout site
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Makers SDK
+        run: npm install --no-save @edgeone/makers-sdk@0.2.0
+
+      - name: Ensure custom domain
+        run: node tools/edgeone-domain.mjs

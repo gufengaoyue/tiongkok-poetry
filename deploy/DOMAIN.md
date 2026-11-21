@@ -1,5 +1,12 @@
 # 自有域名接入准备
 
+本次目标：
+
+- 域名：`tiongkok-poetry.cn`（已备案）
+- DNS：阿里云 `dns1.hichina.com` / `dns2.hichina.com`
+- EdgeOne 项目：`tiongkok-poetry`（自动部署已创建）
+- 推荐先绑定 `www.tiongkok-poetry.cn`，根域做 URL 转发；如果阿里云支持根域 CNAME/ALIAS，再直接绑根域
+
 这份文档对应「注册自己的域名后，把 EdgeOne 站点换成长期域名」。代码和自动部署已经准备好，域名注册完成后只需要在控制台做归属验证和 DNS 解析。
 
 ## 1. 选哪种域名
@@ -11,12 +18,15 @@
 ## 2. 在 EdgeOne 添加域名
 
 1. 进入 EdgeOne Makers 控制台 → 项目 `tiongkok-poetry` → **域名管理**。
-2. 点击「添加自定义域名」，填入完整域名（例如 `poetry.example.com`）。
-3. 加速区域保持当前项目区域；系统会给出**归属验证值**和 **CNAME 目标**，以控制台显示为准。
-4. 如果控制台要求归属验证：到域名 DNS 服务商添加一条 `TXT` 记录，主机记录和值照控制台复制。
+2. 点击「添加自定义域名」，填入 `www.tiongkok-poetry.cn`。
+3. 当前项目区域为 global；系统会给出**归属验证值**和 **CNAME 目标**，以控制台显示为准。
+4. 如果控制台要求归属验证：到阿里云 DNS 添加一条 `TXT` 记录，主机记录和值照控制台复制。
 5. 验证通过后，添加 `CNAME` 记录指向控制台给出的目标。
-   - 根域（`example.com`）如果不支持 CNAME，使用 DNS 服务商的 ALIAS/ANAME/CNAME 展平；或者改用 `www` 子域，根域做 301。
-6. 等待 DNS 生效，EdgeOne 自动签发 HTTPS 证书；状态变为「已生效」后访问 `https://你的域名/`。
+   - 主机记录：`www`
+   - 记录类型：`CNAME`
+   - 记录值：EdgeOne 控制台提供的 CNAME 目标
+   - 根域 `tiongkok-poetry.cn` 在阿里云不建议直接填 CNAME；可在阿里云做 URL 转发到 `https://www.tiongkok-poetry.cn/`，或使用支持根域 CNAME 展平的 DNS 服务。
+6. 等待 DNS 生效，EdgeOne 自动签发 HTTPS 证书；状态变为「已生效」后访问 `https://www.tiongkok-poetry.cn/`。
 
 ## 3. 自动部署与域名互不影响
 

@@ -11,7 +11,7 @@
 | 通道 | 地址 | 说明 |
 | --- | --- | --- |
 | **GitHub Pages（主站）** | **https://gufengaoyue.github.io/chinese-poetry/** | 国内可直连，纯静态，免费 |
-| EdgeOne Pages（国内备用） | 待绑定自定义域名 | 根路径构建、分片检索与 GitHub Actions 自动部署已就绪；待配置 API Token 和域名 |
+| EdgeOne Pages（国内备用） | https://www.tiongkok-poetry.cn（接入中） | 项目 `tiongkok-poetry` 已自动部署；GitHub Actions 自动更新，待域名 DNS 生效 |
 | Cloudflare Workers（备用） | https://molan-verse-archive.gufengaoyue.workers.dev | 海外可用；当前网络下 `workers.dev` 被 DNS 污染，国内无法直连 |
 
 GitHub Pages 是当前实际可用的主站。EdgeOne 是独立的第二条发布通道，不会替换或影响 GitHub Pages；Cloudflare 版本保留作为海外镜像。
