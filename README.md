@@ -11,7 +11,7 @@
 | 通道 | 地址 | 说明 |
 | --- | --- | --- |
 | **GitHub Pages（主站）** | **https://gufengaoyue.github.io/chinese-poetry/** | 国内可直连，纯静态，免费 |
-| EdgeOne Pages（国内备用） | 待绑定自定义域名 | 根路径构建与分片检索已验收；默认域名仅短期预览 |
+| EdgeOne Pages（国内备用） | 待绑定自定义域名 | 根路径构建、分片检索与 GitHub Actions 自动部署已就绪；待配置 API Token 和域名 |
 | Cloudflare Workers（备用） | https://molan-verse-archive.gufengaoyue.workers.dev | 海外可用；当前网络下 `workers.dev` 被 DNS 污染，国内无法直连 |
 
 GitHub Pages 是当前实际可用的主站。EdgeOne 是独立的第二条发布通道，不会替换或影响 GitHub Pages；Cloudflare 版本保留作为海外镜像。
@@ -252,24 +252,23 @@ https://gufengaoyue.github.io/chinese-poetry/
 
 EdgeOne 使用根路径构建，产物在 `web/dist-edgeone`，与 GitHub Pages 的 `/chinese-poetry/` 子路径构建完全分开。
 
+本地构建：
+
 ```powershell
 npm run edgeone:build
+npm run edgeone:zip
 ```
 
-构建完成后上传 `molan-edgeone.zip`，或在登录 CLI 后执行：
-
-```powershell
-npx edgeone makers deploy web\dist-edgeone -n chinese-poetry
-```
+推送到 `main` 后，`.github/workflows/edgeone.yml` 会自动完成构建和部署；只需在 GitHub 仓库 secret 中配置 `EDGEONE_API_TOKEN`。没有 token 时 workflow 会构建但跳过上传，不报红。
 
 关键点：
 
-- `deploy/edgeone.json` 负责 SPA 路由回退；
+- `deploy/edgeone.json` 负责 SPA 路由回退与安全响应头；
 - 30.9 MiB 的 `token-index.bin` 会按 token 边界拆成两个 16 MiB 以内的分片，并生成 `token-index.json` 清单；
 - 前端按全局偏移选择分片，再对分片做局部 Range；
 - EdgeOne 的默认域名只适合短期预览，长期访问需要绑定自定义域名；含中国大陆加速需 ICP 备案，不含中国大陆可选择海外节点。
 
-完整步骤、限制和验收清单见 [`deploy/EDGEONE.md`](deploy/EDGEONE.md)。
+完整步骤、限制和验收清单见 [`deploy/EDGEONE.md`](deploy/EDGEONE.md)；域名接入见 [`deploy/DOMAIN.md`](deploy/DOMAIN.md)；反爬配置见 [`deploy/EDGEONE-SECURITY.md`](deploy/EDGEONE-SECURITY.md)。
 
 ---
 

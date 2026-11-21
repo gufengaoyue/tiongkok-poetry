@@ -37,42 +37,34 @@ EdgeOne 单个文件上限是 25 MB，而完整检索索引 `token-index.bin` �
 
 GitHub Pages 的构建仍保留单个 `token-index.bin`；前端在没有 `token-index.json` 时自动回退到旧路径。
 
-## 3. 上传到 EdgeOne
+## 3. 自动部署（推荐）
 
-推荐 **直接上传**，不走 Git 集成：
+仓库已包含 `.github/workflows/edgeone.yml`。推送到 `main` 后，GitHub Actions 会：
 
-- 生成数据和前端构建产物约 226 MB，且 `web/public/data` 被 `.gitignore` 忽略；
-- EdgeOne 的 Git 构建环境不一定带 Python，跑不了 `npm run cf:index`；
-- 直接上传已构建的 `web/dist-edgeone` 最可控。
+1. `npm ci --prefix web`
+2. `npm run edgeone:build`
+3. `npm run edgeone:zip`
+4. 用 `edgeone makers deploy molan-edgeone.zip -n chinese-poetry -t <token>` 更新现有 EdgeOne 生产项目
 
-### 方式 A：控制台 ZIP 上传
+这套方案不改变当前项目的「直接上传」类型，也不依赖 EdgeOne 自己的 Git 构建环境；构建在 GitHub 的 Windows runner 上完成，所以 `server/data` 里已提交的 8 个语料文件、Python、Vite 和 `pwsh` 都可控。
 
-仓库根目录已经生成 `molan-edgeone.zip`，ZIP 根目录直接包含：
+### 3.1 一次性配置 API Token
 
-```text
-index.html
-edgeone.json
-assets/
-data/
-fonts/
-```
+1. 打开 EdgeOne Makers 控制台 → **设置 → API Token**，创建一个 Token（只需部署权限）。
+2. 打开 GitHub 仓库 **Settings → Secrets and variables → Actions → New repository secret**。
+3. 名称填 `EDGEONE_API_TOKEN`，值粘贴刚创建的 Token。
 
-在 EdgeOne Makers 控制台选择「直接上传」，上传这个 ZIP 即可。不要再多套一层文件夹，否则入口 `index.html` 不在根目录。
+没有配置这个 secret 时，workflow 仍会完成构建，并在日志里给出 warning，但会跳过部署；配置后下一次 push 就会自动上线。
 
-后续更新时重新打包：
+### 3.2 手动兜底
 
 ```powershell
+git pull
+npm run edgeone:build
 npm run edgeone:zip
 ```
 
-### 方式 B：CLI 上传
-
-```powershell
-npx edgeone login
-npx edgeone makers deploy web\dist-edgeone -n chinese-poetry
-```
-
-或上传 ZIP：
+控制台「构建部署 → 新建部署」上传 `molan-edgeone.zip` 到生产环境；或用 CLI：
 
 ```powershell
 npx edgeone makers deploy molan-edgeone.zip -n chinese-poetry
@@ -120,23 +112,16 @@ EdgeOne 的默认域名有访问期限，长期使用需要绑定自己的域名
 
 ## 6. GitHub 更新后会同步吗？
 
-**当前项目是直接上传类型，默认不会随 GitHub 自动更新。** 项目概览里的 `代码源 main` 只是源分支标识，不等于已经启用 Git 自动构建；以最近一次生产部署 `dpwqv3gt…` 为准，它是直接上传的静态产物。
+**会，但同步动作在 GitHub Actions，不是 EdgeOne 的内置 Git 集成。** 当前 EdgeOne 项目仍是「直接上传」类型；`.github/workflows/edgeone.yml` 在 `main` 更新后构建 ZIP，并用 API Token 调用 `edgeone makers deploy`，效果等同于自动发布。
 
-GitHub 更新后的手动流程：
+前提只有两个：
 
-```powershell
-git pull
-npm run edgeone:build
-npm run edgeone:zip
-```
+1. GitHub 仓库 secret 里已配置 `EDGEONE_API_TOKEN`；
+2. workflow 运行成功（构建、打包、上传都不报错）。
 
-然后在 EdgeOne 控制台「构建部署 → 新建部署」，把新的 `molan-edgeone.zip` 上传到生产环境；或使用 CLI：
+不需要在 EdgeOne 控制台里点「新建部署」，也不需要把 `gh-pages` 推到 EdgeOne。GitHub Pages 仍然由 `gh-pages` 独立发布，两条链路互不影响。
 
-```powershell
-npx edgeone makers deploy molan-edgeone.zip -n chinese-poetry
-```
-
-如果项目设置里确实已经连接了 GitHub 仓库并开启了生产环境「自动部署」，推送到 `main` 会触发 EdgeOne 构建；但本仓库的构建需要 Python 和 226 MB 生成数据，而生成数据不在 Git 中，EdgeOne 默认构建环境通常无法直接完成。因此当前仍建议保持“本地构建 + 上传 ZIP”的方式。
+> 如果以后把 EdgeOne 项目改成 Git 集成或新建了大陆项目，仍可继续用这套 workflow，只需改 `.github/workflows/edgeone.yml` 顶部的 `EDGEONE_PROJECT` 和 `-a` 区域参数。
 
 ## 7. 验收清单
 
@@ -156,7 +141,10 @@ EdgeOne 相关改动只新增：
 - `web/dist-edgeone`（构建产物，已忽略）
 - `deploy/edgeone.json`
 - `tools/prepare_edgeone.js`
-- `web` / 根目录的 `build:edgeone`、`edgeone:build` 脚本
+- `.github/workflows/edgeone.yml`
+- `web/public/robots.txt`
+- `deploy/EDGEONE-SECURITY.md`
+- `web` / 根目录的 `build:edgeone`、`edgeone:build`、`edgeone:zip` 脚本
 
 GitHub Pages 仍然使用：
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
-import { useApi } from '../hooks';
+import { useApi, useMediaQuery } from '../hooks';
 import { useLang } from '../lang';
 import type { Stats } from '../types';
 import { CountUp, Reveal, SectionHead } from '../components/ui';
@@ -60,10 +60,10 @@ function CollectionGlyph({ i }: { i: number }) {
   );
 }
 
-function FlyFlower() {
+function FlyFlower({ size = 9 }: { size?: number }) {
   const [ch, setCh] = useState('月');
   const [input, setInput] = useState('月');
-  const { data } = useApi<any>('/lines', { char: ch, size: 9 }, ch.length > 0 && ch.length <= 2);
+  const { data } = useApi<any>('/lines', { char: ch, size }, ch.length > 0 && ch.length <= 2);
   const { tr } = useLang();
   const chars = ['月', '风', '花', '酒', '雪', '云', '山', '江'];
   return (
@@ -103,6 +103,7 @@ export function Home() {
   const { data: stats } = useApi<Stats>('/stats');
   const { data: daily } = useApi<any>('/daily');
   const [qi, setQi] = useState(0);
+  const isPhone = useMediaQuery('(max-width: 620px)');
   const navigate = useNavigate();
   const { tr } = useLang();
   const topImagery = (stats?.imagery || []).slice(0, 5).sort((a, b) => b.count - a.count);
@@ -114,7 +115,10 @@ export function Home() {
   }, []);
 
   const quote = stats?.quotes?.length ? stats.quotes[qi % stats.quotes.length] : null;
-  const topAuthors = useMemo(() => stats?.topAuthors?.slice(0, 8) || [], [stats]);
+  const topAuthors = useMemo(
+    () => stats?.topAuthors?.slice(0, isPhone ? 5 : 8) || [],
+    [stats, isPhone]
+  );
   const maxAuthor = Math.max(...(topAuthors.map(a => a.poemCount) || [1]), 1);
 
   const random = async () => {
@@ -219,6 +223,7 @@ export function Home() {
         <div className="scroll-hint"><span>SCROLL</span><i /></div>
       </section>
 
+      {!isPhone && (
       <section className="stat-band">
         <div className="shell">
           <div className="stat-grid">
@@ -245,6 +250,7 @@ export function Home() {
           </div>
         </div>
       </section>
+      )}
 
       <section className="section">
         <div className="shell">
@@ -267,7 +273,7 @@ export function Home() {
             side="02 / CORPUS"
           />
           <div className="coll-grid">
-            {(stats?.collections || []).map((c, i) => (
+            {(stats?.collections || []).slice(0, isPhone ? 6 : 12).map((c, i) => (
               <Reveal key={c.code} delay={i * 40}>
                 <Link to={`/library?coll=${c.code}`} className="coll-card"
                   onMouseMove={e => {
@@ -285,6 +291,11 @@ export function Home() {
               </Reveal>
             ))}
           </div>
+          {isPhone && (stats?.collections?.length || 0) > 6 && (
+            <div className="coll-more">
+              <Link className="btn ghost small" to="/library">查看余下六部总集<span className="arrow">→</span></Link>
+            </div>
+          )}
         </div>
       </section>
 
@@ -303,7 +314,7 @@ export function Home() {
                     <h2 className="daily-title">{tr(daily.title)}</h2>
                     <div className="daily-author">{tr(daily.author)} · {daily.dynasty}</div>
                     <div className="daily-text">
-                      {(daily.linesArr || []).slice(0, 6).map((l: string, i: number) => (
+                      {(daily.linesArr || []).slice(0, isPhone ? 4 : 6).map((l: string, i: number) => (
                         <div key={i}>{tr(l)}</div>
                       ))}
                     </div>
@@ -315,6 +326,7 @@ export function Home() {
                 ) : <div className="skeleton" style={{ height: 220, marginTop: 30 }} />}
               </div>
             </Reveal>
+            {!isPhone && (
             <Reveal delay={120}>
               <div className="daily-card">
                 <div className="vet">
@@ -333,6 +345,7 @@ export function Home() {
                 </div>
               </div>
             </Reveal>
+            )}
           </div>
         </div>
       </section>
@@ -351,14 +364,14 @@ export function Home() {
                 <span className="panel-title">词牌星河</span>
                 <span className="panel-label">TOP 14 / RHYTHM</span>
               </div>
-              {stats && <RadialChart data={stats.topRhythms.slice(0, 14)} total={stats.totals.rhythms} size={520} />}
+              {stats && <RadialChart data={stats.topRhythms.slice(0, 14)} total={stats.totals.rhythms} size={isPhone ? 300 : 520} />}
             </div>
             <div className="panel" style={{ gridColumn: 'span 5' }}>
               <div className="panel-head">
                 <span className="panel-title">意象之海</span>
-                <span className="panel-label">TOP 110 / CHARACTER</span>
+                <span className="panel-label">TOP {isPhone ? 36 : 110} / CHARACTER</span>
               </div>
-              {stats && <CharCloud data={stats.chars} limit={110} />}
+              {stats && <CharCloud data={stats.chars} limit={isPhone ? 36 : 110} />}
               <div style={{ marginTop: 26, borderTop: '1px solid var(--line)', paddingTop: 22 }}>
                 <div className="bar-list">
                   {topImagery.map(it => (
@@ -383,7 +396,7 @@ export function Home() {
                 <span className="panel-title">飞花令</span>
                 <span className="panel-label">FIND A CHARACTER</span>
               </div>
-              <FlyFlower />
+              <FlyFlower size={isPhone ? 5 : 9} />
             </div>
             <div className="panel" style={{ gridColumn: 'span 5' }}>
               <div className="panel-head">

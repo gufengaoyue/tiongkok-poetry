@@ -1038,6 +1038,7 @@ html[data-theme="paper"] .footer { background: transparent; }
   .stat-item:nth-child(4) { border-top: 1px solid var(--line); }
   .coll-grid, .lib-grid, .books { grid-template-columns: 1fr 1fr; }
   .atlas-grid .panel.half, .atlas-grid .panel.third { grid-column: span 12; }
+  .atlas-grid > .panel { grid-column: 1 / -1 !important; }
   .panel-head { flex-wrap: wrap; gap: 6px 16px; }
   .dyn-band { min-width: 560px; }
   .dyn-band > div { min-width: 72px; }
@@ -1073,4 +1074,109 @@ html[data-theme="paper"] .footer { background: transparent; }
   .panel { padding: 20px; }
   .panel-label { font-size: 10px; letter-spacing: .1em; }
   .dyn-legend { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------------- phone homepage: compact editorial layout ---------------- */
+@media (max-width: 620px) {
+  .hero {
+    min-height: 0;
+    align-items: flex-start;
+    padding: calc(var(--nav-h) + 24px) 0 40px;
+  }
+  .hero-inner { gap: 0; }
+  .hero-eyebrow { margin-bottom: 18px; }
+  .hero-title { font-size: clamp(40px, 11.6vw, 46px); line-height: 1.12; }
+  .hero-sub {
+    margin-top: 16px;
+    max-width: 100%;
+    font-size: 13.5px;
+    line-height: 1.9;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .hero-cta { margin-top: 22px; gap: 8px; flex-wrap: nowrap; }
+  .hero-cta .btn {
+    width: auto;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 46px;
+    padding: 0 10px;
+    font-size: 12px;
+    letter-spacing: .06em;
+  }
+  .hero-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 24px;
+  }
+  .hero-meta b { font-size: 19px; }
+  .hero-meta span { font-size: 8px; line-height: 1.45; letter-spacing: .07em; }
+  .hero-marquee, .scroll-hint, .stat-band { display: none; }
+
+  .section { padding: 44px 0; }
+  .sec-head { margin-bottom: 26px; gap: 8px; }
+  .sec-head .h2 { font-size: 27px; line-height: 1.3; margin-top: 12px; }
+  .lede, .sec-side { display: none; }
+
+  .river {
+    margin-top: 4px;
+    margin-inline: -20px;
+    padding: 0 20px 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+  .river::-webkit-scrollbar { display: none; }
+  .river-track {
+    grid-auto-flow: column;
+    grid-auto-columns: 148px;
+    gap: 10px;
+    padding: 6px 0 10px;
+  }
+  .river-node {
+    min-height: 132px;
+    padding: 14px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: linear-gradient(165deg, rgba(255,255,255,.035), rgba(255,255,255,.008));
+    scroll-snap-align: start;
+  }
+  .river-node .bar { width: 100% !important; margin-bottom: 8px; }
+  .node-era { font-size: 8.5px; letter-spacing: .12em; }
+  .node-name { font-size: 25px; margin-top: 5px; }
+  .node-count { font-size: 10px; margin-top: 3px; }
+  .node-sample { display: none; }
+
+  .coll-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .coll-card {
+    min-height: 146px;
+    padding: 16px 13px 14px;
+    border-radius: 8px;
+  }
+  .coll-code { font-size: 8px; letter-spacing: .12em; }
+  .coll-name { font-size: 24px; line-height: 1.2; }
+  .coll-count { font-size: 10px; margin-top: 6px; }
+  .coll-desc { display: none; }
+  .coll-art { width: 78px; height: 78px; right: -17px; top: -17px; opacity: .34; }
+  .coll-arrow { right: 11px; bottom: 9px; font-size: 11px; }
+  .coll-more { display: flex; justify-content: center; margin-top: 16px; }
+
+  .daily-title { margin: 14px 0 6px; font-size: 26px; }
+  .daily-text { margin-top: 18px; font-size: 16px; line-height: 2; }
+  .daily-foot { margin-top: 22px; }
+
+  .panel { padding: 16px; border-radius: 8px; }
+  .panel-head { margin-bottom: 16px; gap: 6px 12px; }
+  .panel-title { font-size: 20px; }
+  .radial-wrap { min-height: 250px !important; }
+  .radial-svg { height: auto; aspect-ratio: 1; }
+  .radial-center b { font-size: 28px; }
+  .cloud { gap: 2px 8px; max-height: 220px; overflow: hidden; }
+  .bar-list { gap: 10px; }
+  .bar-row { grid-template-columns: 52px 1fr 54px; gap: 8px; }
+  .bar-name { font-size: 14px !important; }
+  .bar-val { font-size: 10px; }
 }

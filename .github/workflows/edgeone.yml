@@ -1,0 +1,67 @@
+name: Deploy EdgeOne
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: edgeone-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    env:
+      EDGEONE_PROJECT: chinese-poetry
+      EDGEONE_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
+
+    steps:
+      - name: Checkout site
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix web
+
+      - name: Build EdgeOne root site
+        run: npm run edgeone:build
+
+      - name: Package deployment ZIP
+        run: npm run edgeone:zip
+
+      - name: Check EdgeOne token
+        id: token
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:EDGEONE_API_TOKEN)) {
+            "ready=false" >> $env:GITHUB_OUTPUT
+            Write-Output "::warning title=EdgeOne token missing::Add the repository secret EDGEONE_API_TOKEN to enable automatic deployment."
+          } else {
+            "ready=true" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Deploy production
+        if: steps.token.outputs.ready == 'true'
+        shell: pwsh
+        run: |
+          npx -y edgeone@latest makers deploy molan-edgeone.zip `
+            -n $env:EDGEONE_PROJECT `
+            -t $env:EDGEONE_API_TOKEN `
+            -e production `
+            -a global `
+            --json

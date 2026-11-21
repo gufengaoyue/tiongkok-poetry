@@ -19,6 +19,20 @@ export function useApi<T = any>(path: string, params?: Record<string, any>, enab
   return { data, loading, error };
 }
 
+export function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState<boolean>(() =>
+    typeof window !== 'undefined' && window.matchMedia(query).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const sync = () => setMatches(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, [query]);
+  return matches;
+}
+
 export function useDebounce<T>(value: T, delay = 320): T {
   const [v, setV] = useState(value);
   useEffect(() => {
