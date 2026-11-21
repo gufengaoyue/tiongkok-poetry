@@ -10,23 +10,17 @@ on:
         required: true
         default: tiongkok-poetry.icu
         type: string
-  push:
-    branches: [main]
-    paths:
-      - tools/edgeone-domain.mjs
-      - .github/workflows/edgeone-domain.yml
-      - deploy/DOMAIN.md
 
 permissions:
   contents: read
 
 jobs:
   bind:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      EDGEONE_PROJECT: tiongkok-poetry
+      EDGEONE_PROJECT: tiongkok-poetry-overseas
       EDGEONE_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
       EDGEONE_DOMAIN: ${{ github.event.inputs.domain || 'tiongkok-poetry.icu' }}
     steps:

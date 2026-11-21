@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 40
     env:
       EDGEONE_PROJECT: tiongkok-poetry
-      EDGEONE_CN_PROJECT: tiongkok-poetry-cn
+      EDGEONE_OVERSEAS_PROJECT: tiongkok-poetry-overseas
       EDGEONE_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
 
     steps:
@@ -61,4 +61,4 @@ jobs:
         shell: pwsh
         run: |
           npm install --no-save @edgeone/makers-sdk@0.2.0
-          node tools/edgeone-deploy-cn.mjs
+          node tools/edgeone-deploy-overseas.mjs
