@@ -44,9 +44,11 @@ GitHub Pages 的构建仍保留单个 `token-index.bin`；前端在没有 `token
 1. `npm ci --prefix web`
 2. `npm run edgeone:build`
 3. `npm run edgeone:zip`
-4. 用 `edgeone makers deploy molan-edgeone.zip -n tiongkok-poetry -t <token>` 新建/更新 EdgeOne 生产项目
+4. 用 `@edgeone/makers-sdk` 把 ZIP 部署到 `tiongkok-poetry-overseas` 的 `Production` 环境
 
-这套方案不改变当前项目的「直接上传」类型，也不依赖 EdgeOne 自己的 Git 构建环境；构建在 GitHub 的 Windows runner 上完成，所以 `server/data` 里已提交的 8 个语料文件、Python、Vite 和 `pwsh` 都可控。
+这个项目是 `overseas` 区域，也就是控制台里的「全球可用区（不含中国大陆）」。它只使用中国大陆以外的节点，因此绑定 `tiongkok-poetry.cn` 不需要 ICP 备案。
+
+这套方案不改变项目的「直接上传」类型，也不依赖 EdgeOne 自己的 Git 构建环境；构建在 GitHub 的 Windows runner 上完成，所以 `server/data` 里已提交的 8 个语料文件、Python、Vite 和 `pwsh` 都可控。
 
 ### 3.1 一次性配置 API Token
 
@@ -62,17 +64,11 @@ GitHub Pages 的构建仍保留单个 `token-index.bin`；前端在没有 `token
 git pull
 npm run edgeone:build
 npm run edgeone:zip
+$env:EDGEONE_API_TOKEN = '<token>'
+node tools/edgeone-deploy-overseas.mjs
 ```
 
-控制台「构建部署 → 新建部署」上传 `molan-edgeone.zip` 到生产环境；或用 CLI：
-
-```powershell
-npx edgeone@1.7.5 makers deploy molan-edgeone.zip -n tiongkok-poetry
-```
-
-CLI 固定使用 `edgeone@1.7.5`：`1.7.6` 依赖的 `@edgeone/opennextjs-pages@0.2.10-beta.16` 目前在 npm 上不可用，`latest` 会在部署前安装失败。
-
-CLI 会自己生成 `.edgeone` 临时目录；这个目录已被 `.gitignore` 忽略，不要放进最终 ZIP。
+也可以在控制台「构建部署 → 新建部署」上传 `molan-edgeone.zip` 到 `tiongkok-poetry-overseas` 的生产环境。旧版 CLI 的 `-a global` 创建的是 global 项目，不能用来部署这个 `overseas` 项目。
 
 ## 4. 必须保留的 EdgeOne 设置
 
@@ -90,15 +86,19 @@ CLI 会自己生成 `.edgeone` 临时目录；这个目录已被 `.gitignore` �
 
 ## 5. 域名与加速区域
 
-EdgeOne 的默认域名有访问期限，长期使用需要绑定自己的域名：
+EdgeOne 的默认域名只适合短期预览，长期使用需要绑定自己的域名。加速区域有三档：
 
-- **不含中国大陆（global / 海外）**：默认域名通常只用于短期预览；绑定自定义域名后可以长期访问，自定义域名不强制 ICP，但走境外节点。中国大陆访问默认域名可能返回 401。
-- **含中国大陆（china）**：稳定使用默认域名或自定义域名，需要已完成 ICP 备案的域名；没有备案时不要选这个区域。
+- **中国大陆可用区（mainland）**：使用大陆节点，自定义域名必须先完成 ICP 备案。
+- **全球可用区（含中国大陆）（global）**：包含大陆节点，自定义域名同样必须先完成 ICP 备案。
+- **全球可用区（不含中国大陆）（overseas）**：只使用大陆以外节点，自定义域名**不要求 ICP 备案**。
 
-如果只是先验证站点，用 global 预览即可；要长期给国内读者访问，建议：
+本站在没有备案的情况下使用 `overseas`，项目名 `tiongkok-poetry-overseas`，绑定 `tiongkok-poetry.cn`。它能长期访问，但国内访问走跨境链路，速度不承诺；**免备案不等于大陆加速**，这是物理和法律上的双重边界。
 
-1. 准备一个已备案域名，创建「含中国大陆」项目；或
-2. 接受境外节点，绑定一个未备案自定义域名到 global 项目。
+### 加速区域能不能改成中国大陆？
+
+不能直接改。加速区域在创建项目时确定，之后没有切换入口；要大陆节点只能新建项目时选「中国大陆可用区」或「全球可用区（含中国大陆）」，并绑定已完成 ICP 备案的域名。
+
+当前 `overseas` 是适合无备案场景的选择：自定义域名不强制备案；默认 `edgeone.dev` 域名在中国大陆网络可能返回 401，绑定自定义域名后走境外节点。
 
 ### 默认域名能不能改成 `chinese-poetry.edgeone.dev`？
 
@@ -114,7 +114,7 @@ EdgeOne 的默认域名有访问期限，长期使用需要绑定自己的域名
 
 ## 6. GitHub 更新后会同步吗？
 
-**会，但同步动作在 GitHub Actions，不是 EdgeOne 的内置 Git 集成。** 当前 EdgeOne 项目仍是「直接上传」类型；`.github/workflows/edgeone.yml` 在 `main` 更新后构建 ZIP，并用 API Token 调用 `edgeone makers deploy`，效果等同于自动发布。
+**会，但同步动作在 GitHub Actions，不是 EdgeOne 的内置 Git 集成。** 当前 EdgeOne 项目仍是「直接上传」类型；`.github/workflows/edgeone.yml` 在 `main` 更新后构建 ZIP，并调用 Makers SDK 部署到 `Production`，效果等同于自动发布。
 
 前提只有两个：
 
@@ -123,7 +123,7 @@ EdgeOne 的默认域名有访问期限，长期使用需要绑定自己的域名
 
 不需要在 EdgeOne 控制台里点「新建部署」，也不需要把 `gh-pages` 推到 EdgeOne。GitHub Pages 仍然由 `gh-pages` 独立发布，两条链路互不影响。
 
-> 如果以后把 EdgeOne 项目改成 Git 集成或新建了大陆项目，仍可继续用这套 workflow，只需改 `.github/workflows/edgeone.yml` 顶部的 `EDGEONE_PROJECT` 和 `-a` 区域参数。
+> 如果以后新建了大陆项目，只需改 `.github/workflows/edgeone.yml` 顶部的 `EDGEONE_OVERSEAS_PROJECT`，并在 `tools/edgeone-deploy-overseas.mjs` 中调整项目名与 `area`；区域参数以 EdgeOne 控制台/API 为准。
 
 ## 7. 验收清单
 
