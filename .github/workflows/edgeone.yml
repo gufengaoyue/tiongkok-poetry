@@ -60,18 +60,5 @@ jobs:
         if: steps.token.outputs.ready == 'true'
         shell: pwsh
         run: |
-          npx -y edgeone@1.7.5 makers deploy molan-edgeone.zip `
-            -n $env:EDGEONE_PROJECT `
-            -t $env:EDGEONE_API_TOKEN `
-            -e production `
-            -a global `
-            --json
-
-      - name: Install Makers SDK
-        if: steps.token.outputs.ready == 'true'
-        run: npm install --no-save @edgeone/makers-sdk@0.2.0
-
-      - name: Deploy mainland production
-        if: steps.token.outputs.ready == 'true'
-        shell: pwsh
-        run: node tools/edgeone-deploy-cn.mjs
+          npm install --no-save @edgeone/makers-sdk@0.2.0
+          node tools/edgeone-deploy-cn.mjs

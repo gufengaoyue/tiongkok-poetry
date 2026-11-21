@@ -44,7 +44,7 @@ try {
   const deployment = await makers.deployments.deploy({
     projectId: project.projectId,
     artifact: { archive: zipPath },
-    env: 'production',
+    env: 'Production',
     wait: true,
     timeout: 900,
     pollInterval: 10,
