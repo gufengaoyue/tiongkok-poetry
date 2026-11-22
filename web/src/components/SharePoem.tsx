@@ -77,7 +77,7 @@ async function renderCard(input: {
   lines: string[];
   qr: string;
   domain: string;
-}): Promise<Blob> {
+}): Promise<string> {
   const W = 1080;
   const H = 1440;
   const canvas = document.createElement('canvas');
@@ -231,9 +231,18 @@ async function renderCard(input: {
   ctx.font = '400 13px "Molan Serif", "Noto Serif SC", serif';
   ctx.fillText('长按识别二维码', qrX + qrSize / 2, qrY + qrSize + 27);
 
-  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
-  if (!blob) throw new Error('card export failed');
-  return blob;
+  const dataUrl = canvas.toDataURL('image/png');
+  if (!dataUrl.startsWith('data:image/png')) throw new Error('card export failed');
+  return dataUrl;
+}
+
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [meta, payload] = dataUrl.split(',');
+  const mime = /data:([^;]+)/.exec(meta)?.[1] || 'image/png';
+  const binary = atob(payload || '');
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
 }
 
 function copyFallback(text: string): boolean {
@@ -265,8 +274,7 @@ function isMobile(): boolean {
 
 export function SharePoem({ open, onClose, poem }: { open: boolean; onClose: () => void; poem: PoemDetail }) {
   const { tr } = useLang();
-  const [preview, setPreview] = useState<string | null>(null);
-  const [blob, setBlob] = useState<Blob | null>(null);
+  const [cardData, setCardData] = useState('');
   const [fileName, setFileName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -297,8 +305,7 @@ export function SharePoem({ open, onClose, poem }: { open: boolean; onClose: () 
 
   useEffect(() => {
     if (!open) {
-      setPreview(null);
-      setBlob(null);
+      setCardData('');
       setError('');
       setNotice('');
       setLoading(false);
@@ -308,15 +315,14 @@ export function SharePoem({ open, onClose, poem }: { open: boolean; onClose: () 
     let alive = true;
     setLoading(true);
     setError('');
-    setPreview(null);
-    setBlob(null);
+    setCardData('');
     setFileName(generatedName);
     const timer = window.setTimeout(() => notify('正在生成分享卡片…'), 0);
 
     (async () => {
       try {
         const qr = await makeQr(shareUrl);
-        const card = await renderCard({
+        const dataUrl = await renderCard({
           title: cardTitle,
           author: cardAuthor,
           dynasty: cardDynasty,
@@ -326,9 +332,7 @@ export function SharePoem({ open, onClose, poem }: { open: boolean; onClose: () 
           domain: shareHost,
         });
         if (!alive) return;
-        const url = URL.createObjectURL(card);
-        setBlob(card);
-        setPreview(url);
+        setCardData(dataUrl);
         setLoading(false);
         notify('卡片已生成，可点击下载保存');
       } catch (err) {
@@ -359,29 +363,28 @@ export function SharePoem({ open, onClose, poem }: { open: boolean; onClose: () 
 
   useEffect(() => {
     return () => {
-      if (preview) URL.revokeObjectURL(preview);
       if (noticeTimer.current) window.clearTimeout(noticeTimer.current);
     };
-  }, [preview]);
+  }, []);
 
   const download = () => {
-    if (!blob) return;
+    if (!cardData) return;
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    a.href = cardData;
     a.download = fileName || generatedName;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    window.setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     notify('已开始下载卡片');
   };
 
   const shareImage = async () => {
-    if (!blob) return;
+    if (!cardData) return;
     const nav = navigator as Navigator & {
       canShare?: (data: any) => boolean;
       share?: (data: any) => Promise<void>;
     };
+    const blob = dataUrlToBlob(cardData);
     const file = new File([blob], fileName || generatedName, { type: 'image/png' });
     const payload = { files: [file], title: `${title} · 墨澜`, text: `${title} · ${author}` };
     if (!nav.share || (nav.canShare && !nav.canShare(payload))) {
@@ -469,17 +472,17 @@ export function SharePoem({ open, onClose, poem }: { open: boolean; onClose: () 
         <div className="share-body">
           <div className="share-card-col">
             <div className={`share-card-frame ${loading ? 'is-loading' : ''}`}>
-              {preview ? <img src={preview} alt={`${title} 分享卡片`} /> : (
+              {cardData ? <img src={cardData} alt={`${title} 分享卡片`} /> : (
                 <div className="share-card-placeholder">
                   {loading ? <div className="spin-loader" /> : <span>卡片预览</span>}
                 </div>
               )}
             </div>
             <div className="share-card-actions">
-              <button className="btn share-primary" type="button" disabled={!blob} onClick={download}>
+              <button className="btn share-primary" type="button" disabled={!cardData} onClick={download}>
                 {Icon.download({})} 下载卡片
               </button>
-              {blob && !!navigator.share && (
+              {cardData && !!navigator.share && (
                 <button className="tool" type="button" onClick={shareImage}>分享图片</button>
               )}
             </div>
