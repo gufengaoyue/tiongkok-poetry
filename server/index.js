@@ -251,10 +251,15 @@ function searchCandidates(q) {
   let map = queryTokens(tokens);
   const missing = tokens.some(t => !map.has(t));
   if (mode === 'bigram' && missing) {
-    // 罕见词组没有二元索引时退回单字交集。
-    tokens = chars.map(ch => 'c:' + ch);
-    mode = 'char';
-    map = queryTokens(tokens);
+    // 缺一个二元组时只丢弃该项，保留其余相邻二元组；完整短语必然包含它们。
+    const keep = tokens.filter(t => map.has(t));
+    if (keep.length) {
+      tokens = keep;
+    } else {
+      tokens = chars.map(ch => 'c:' + ch);
+      mode = 'char';
+      map = queryTokens(tokens);
+    }
   }
   const lists = tokens.map(t => map.get(t) || []);
   if (lists.some(list => !list.length)) {

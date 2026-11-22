@@ -14,21 +14,23 @@ export function SearchPage() {
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const { data: stats } = useApi<Stats>('/stats');
   const { data: poets } = useApi<any>('/poets', { q, size: 5 }, q.length > 0);
   const { tr } = useLang();
 
   useEffect(() => { setInput(q); }, [q]);
-  useEffect(() => { setPage(1); setItems([]); }, [q, coll]);
+  useEffect(() => { setPage(1); setItems([]); setTotal(0); setHasMore(false); }, [q, coll]);
 
   useEffect(() => {
-    if (!q) { setItems([]); setTotal(0); return; }
+    if (!q) { setItems([]); setTotal(0); setHasMore(false); return; }
     let alive = true;
     setLoading(true);
     api<any>('/search', { q, coll: coll || undefined, page, size: 12 }).then(r => {
       if (!alive) return;
       setTotal(r.total);
+      setHasMore(!!r.hasMore);
       setItems(prev => (page === 1 ? r.items : [...prev, ...r.items]));
       setLoading(false);
     }).catch(() => alive && setLoading(false));
@@ -66,7 +68,10 @@ export function SearchPage() {
 
           {q && (
             <div style={{ marginTop: 22, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span className="lib-count">在 <b>{total.toLocaleString('en-US')}</b> 条结果中</span>
+              <span className="lib-count">
+                {hasMore ? '已找到' : '共'} <b>{total.toLocaleString('en-US')}</b> 条
+                {hasMore ? '，继续加载查看更多' : ''}
+              </span>
               <button className={`chip ${!coll ? 'active' : ''}`} onClick={() => setColl('')}>全部总集</button>
               {stats?.collections.slice(0, 7).map(c => (
                 <button key={c.code} className={`chip ${coll === c.code ? 'active' : ''}`} onClick={() => setColl(c.code)}>
@@ -105,12 +110,12 @@ export function SearchPage() {
               ))}
             </div>
             {loading && <div className="load-more"><div className="spin-loader" /></div>}
-            {!loading && items.length < total && (
+            {!loading && (hasMore || items.length < total) && (
               <div className="load-more">
                 <button className="btn ghost small" onClick={() => setPage(p => p + 1)}>加载更多</button>
               </div>
             )}
-            {!loading && items.length === 0 && <div className="empty">没有找到「{q}」相关的诗句</div>}
+            {!loading && items.length === 0 && total === 0 && !hasMore && <div className="empty">没有找到「{q}」相关的诗句</div>}
           </>
         ) : (
           <div className="empty" style={{ paddingTop: 60 }}>

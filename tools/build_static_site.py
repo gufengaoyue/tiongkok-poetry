@@ -38,7 +38,7 @@ PUB = ROOT / "web" / "public" / "data"
 
 SHARD_SIZE = 1000
 CHAR_CHUNK = 8000
-TOP_BIGRAMS = 20000
+TOP_BIGRAMS = 60000
 MAX_LINE_ITEMS = 240
 LINE_TARGET_COUNT = 120
 DEFAULT_LINE_CHARS = ["月", "风", "花", "酒", "雪", "云", "山", "江"]

@@ -16,7 +16,7 @@ const jsonCache = new Map<string, Promise<any>>();
 const apiCache = new Map<string, Promise<any>>();
 const shardCache = new Map<number, Promise<any[]>>();
 const candidateCache = new Map<string, Promise<number[]>>();
-const searchCache = new Map<string, Hit[]>();
+const searchStateCache = new Map<string, SearchState>();
 const filterCache = new Map<string, number[]>();
 
 type Row = [
@@ -48,6 +48,14 @@ interface Hit {
   idx: number;
   score: number;
   where: string;
+}
+
+interface SearchState {
+  hits: Hit[];
+  order: { idx: number; score: number }[];
+  cursor: number;
+  done: boolean;
+  needsExact: boolean;
 }
 
 let indexPromise: Promise<IndexData> | null = null;
@@ -475,8 +483,19 @@ async function staticCandidates(q: string): Promise<number[]> {
 
   let lists = await read(tokens);
   if (tokens[0]?.startsWith('b:') && lists.some(x => x === null)) {
-    tokens = chars.map(ch => 'c:' + ch);
-    lists = await read(tokens);
+    // 缺一个二元组时只丢弃该项，保留其余相邻二元组。
+    // 完整短语必然包含其余已存在的二元组，所以这是精确结果的超集；
+    // 后续搜索页会按页对正文做完整子串校验。
+    const keep = tokens.map((t, i) => [t, lists[i]] as const)
+      .filter(([, list]) => list !== null);
+    if (keep.length) {
+      tokens = keep.map(([t]) => t);
+      lists = keep.map(([, list]) => list as number[]);
+    } else {
+      // 连一个二元组都没有的极短/极生僻查询，才退回单字。
+      tokens = chars.map(ch => 'c:' + ch);
+      lists = await read(tokens);
+    }
   }
   if (lists.some(x => x === null)) return [];
   let ids = lists[0] as number[];
@@ -489,10 +508,21 @@ function searchKey(q: string, params: Record<string, any>): string {
     params.author || '', params.minLen || 0, params.maxLen || 0].join('|');
 }
 
-async function searchHits(q: string, params: Record<string, any>): Promise<Hit[]> {
+async function candidateNeedsExact(q: string): Promise<boolean> {
+  const chars = cjkChars(q);
+  if (chars.length <= 1) return false;
+  if (chars.length === 2) {
+    const map = await loadRangeMap();
+    return !map.has('b:' + chars.join(''));
+  }
+  return true;
+}
+
+async function getSearchState(q: string, params: Record<string, any>): Promise<SearchState> {
   const key = searchKey(q, params);
-  const hit = searchCache.get(key);
-  if (hit) return hit;
+  const cached = searchStateCache.get(key);
+  if (cached) return cached;
+
   const data = await loadIndex();
   const seen = new Set<number>();
   const hits: Hit[] = [];
@@ -513,22 +543,57 @@ async function searchHits(q: string, params: Record<string, any>): Promise<Hit[]
   }
 
   const candidates = await bodyCandidates(q);
+  const order: { idx: number; score: number }[] = [];
   for (const i of candidates) {
     if (seen.has(i) || i < 0 || i >= data.rows.length) continue;
     const row = data.rows[i];
     if (!matches(row, params)) continue;
     seen.add(i);
-    hits.push({
+    order.push({
       idx: i,
       score: 30 + Math.min(row[10], 10) * 14 + (row[11] ? 120 : 0) + Math.min(row[8], 120) * 0.05,
-      where: 'content',
     });
   }
+  order.sort((a, b) => b.score - a.score || a.idx - b.idx);
 
-  hits.sort((a, b) => b.score - a.score || a.idx - b.idx);
-  if (searchCache.size > 24) searchCache.clear();
-  searchCache.set(key, hits);
-  return hits;
+  const state: SearchState = {
+    hits,
+    order,
+    cursor: 0,
+    done: order.length === 0,
+    needsExact: await candidateNeedsExact(q),
+  };
+
+  // 单字/已命中的二元组本身就是精确匹配，不需要逐篇读正文。
+  if (!state.needsExact) {
+    for (const item of order) state.hits.push({ idx: item.idx, score: item.score, where: 'content' });
+    state.cursor = order.length;
+    state.done = true;
+  }
+
+  if (searchStateCache.size > 12) searchStateCache.clear();
+  searchStateCache.set(key, state);
+  return state;
+}
+
+async function ensureSearchHits(state: SearchState, q: string, target: number): Promise<void> {
+  if (!state.needsExact || state.hits.length >= target || state.done) return;
+  const data = await loadIndex();
+  const phrase = cjkChars(q).join('');
+  const batch = 16;
+
+  while (state.hits.length < target && state.cursor < state.order.length) {
+    const slice = state.order.slice(state.cursor, state.cursor + batch);
+    const recs = await Promise.all(slice.map(item => loadContent(data.rows[item.idx])));
+    for (let i = 0; i < slice.length; i++) {
+      const rec = recs[i];
+      if (rec && String(rec[8] || '').includes(phrase)) {
+        state.hits.push({ idx: slice[i].idx, score: slice[i].score, where: 'content' });
+      }
+    }
+    state.cursor += slice.length;
+  }
+  if (state.cursor >= state.order.length) state.done = true;
 }
 
 async function hydrateSnippets(items: Hit[], q: string): Promise<(string | undefined)[]> {
@@ -554,13 +619,17 @@ async function hydrateSnippets(items: Hit[], q: string): Promise<(string | undef
 async function searchPoems(q: string, params: Record<string, any>) {
   const page = Math.max(1, Number(params.page) || 1);
   const size = Math.min(60, Math.max(4, Number(params.size) || 12));
-  const hits = await searchHits(q, params);
-  const total = hits.length;
-  const pageHits = hits.slice((page - 1) * size, page * size);
+  const state = await getSearchState(q, params);
+  await ensureSearchHits(state, q, page * size);
+  state.hits.sort((a, b) => b.score - a.score || a.idx - b.idx);
+
+  const total = state.hits.length;
+  const hasMore = !state.done;
+  const pageHits = state.hits.slice((page - 1) * size, page * size);
   const data = await loadIndex();
   const snippets = await hydrateSnippets(pageHits, q);
   return {
-    total, page, size, q,
+    total, page, size, q, hasMore,
     items: pageHits.map((h, i) => ({
       ...itemBrief(data.rows[h.idx]),
       snippet: snippets[i],

@@ -79,7 +79,9 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
             )}
             {data?.items?.length > 0 && (
               <>
-                <div className="ov-hint" style={{ marginTop: 20, marginBottom: 6 }}>诗句 · 共 {data.total.toLocaleString()} 条</div>
+                <div className="ov-hint" style={{ marginTop: 20, marginBottom: 6 }}>
+                  {data.hasMore ? '诗句 · 已找到' : '诗句 · 共'} {data.total.toLocaleString()} 条
+                </div>
                 {data.items.map((p: any) => (
                   <div key={p.id} className="ov-item"
                     onClick={() => { navigate(`/poem/${p.id}`); onClose(); }}
