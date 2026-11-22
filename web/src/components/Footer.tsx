@@ -29,7 +29,7 @@ export function Footer() {
           <div className="foot-col">
             <h4>关于</h4>
             <Link to="/about">数据与方法</Link>
-            <a href="https://gufengaoyue.github.io/tiongkok-poetry/" target="_blank" rel="noreferrer">GitHub Pages ↗</a>
+            <a href="https://github.com/gufengaoyue/tiongkok-poetry/" target="_blank" rel="noreferrer">GitHub 项目↗</a>
             <p>React · Vite · Node.js</p>
             <p>本地静态构建，无追踪</p>
           </div>
