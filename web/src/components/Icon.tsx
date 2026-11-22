@@ -34,6 +34,17 @@ export const Icon = {
       <path d="M4 7h3l3 5 3 5h3M4 17h3l3-5M14 5h6M17 2l3 3-3 3M17 14l3 3-3 3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  share: (p: any) => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...p}>
+      <circle cx="18" cy="5" r="2.4" /><circle cx="6" cy="12" r="2.4" /><circle cx="18" cy="19" r="2.4" />
+      <path d="M8.2 10.8l7.6-4.3M8.2 13.2l7.6 4.3" strokeLinecap="round" />
+    </svg>
+  ),
+  download: (p: any) => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...p}>
+      <path d="M12 4v11M8 11l4 4 4-4M5 19h14" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
   book: (p: any) => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" {...p}>
       <path d="M5 4h9a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4z" /><path d="M17 7h2v13h-9" />

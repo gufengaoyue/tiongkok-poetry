@@ -6,6 +6,7 @@ import { useLang } from '../lang';
 import { loadFavs, saveFavs } from '../favorites';
 import type { PoemDetail } from '../types';
 import { Icon } from '../components/Icon';
+import { SharePoem } from '../components/SharePoem';
 
 export function PoemPage() {
   const { id } = useParams();
@@ -18,6 +19,7 @@ export function PoemPage() {
   });
   const [fav, setFav] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => { setFav(loadFavs().includes(id || '')); }, [id]);
   useEffect(() => {
@@ -97,6 +99,7 @@ export function PoemPage() {
               <button className={`tool ${fav ? 'on' : ''}`} onClick={toggleFav}>{Icon.heart({})} {fav ? '已收藏' : '收藏'}</button>
               {fav && <Link className="tool" to="/favorites">查看收藏 →</Link>}
               <button className="tool" onClick={copy}>{Icon.copy({})} {copied ? '已复制' : '复制'}</button>
+              <button className="tool" onClick={() => setShareOpen(true)}>{Icon.share({})} 分享</button>
               <button className="tool" onClick={async () => {
                 const r = await api<{ id: string }>('/poem/random', { t: Date.now() });
                 navigate(`/poem/${r.id}`);
@@ -222,6 +225,7 @@ export function PoemPage() {
           <Link className="back-link" to={`/library?coll=${backColl}`}>← 返回{tr(p.collName)}</Link>
         </div>
       </div>
+      <SharePoem open={shareOpen} onClose={() => setShareOpen(false)} poem={p} />
     </main>
   );
 }
